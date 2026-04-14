@@ -1,6 +1,9 @@
+streamlit
 matplotlib
-pandas
 biopython
+pandas
+numpy
 python-docx
 streamlit-molstar
 streamlit-lottie
+requests
