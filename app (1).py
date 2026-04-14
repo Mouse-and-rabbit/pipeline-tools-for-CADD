@@ -167,4 +167,4 @@ with col_right:
             buf.seek(0)
             
             # --- 4. Technical Data Table ---
-            st.write("**Top
+            st.write("**Top 10 Mutation Candidates (High-Flexibility Areas):**")
