@@ -159,32 +159,98 @@ if page == "🏠 HOME / PIPELINE":
 # --- 5. PAGE: DESCRIPTIONS ---
 elif page == "📜 DESCRIPTIONS":
     st.markdown('<div class="hero-text"><p class="sub-title">Theoretical Framework</p><h1 class="main-title">Methodology & Mathematical Basis</h1></div>', unsafe_allow_html=True)
-    st.markdown("### 1. Physico-Chemical Profiling")
-    st.latex(r"pI = \frac{1}{2} (pK_i + pK_j)")
-    st.latex(r"MW = \sum (n_i \times m_i) + (18.015)")
+    
+    st.markdown("### 🧬 1. Physico-Chemical Sequence Analysis")
+    st.write("""
+    The analysis utilizes the **ExPASy ProtParam** algorithm to derive the fundamental properties of the protein. 
+    By treating the primary sequence as a linear chain of residues, we can predict the behavior of the enzyme in 
+    different physiological environments—crucial for mucosal drug delivery.
+    """)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.info("**Isoelectric Point (pI)**")
+        st.latex(r"pI = \frac{pK_i + pK_j}{2}")
+        st.write("Determines the pH at which the enzyme carries no net electrical charge. This is vital for maintaining enzyme stability within the variable pH of the mucosal layer.")
+    
+    with col2:
+        st.info("**Molecular Weight (MW)**")
+        st.latex(r"MW = \sum (n_i \times m_i) + (H_2O)")
+        st.write("Calculated by the summation of average isotopic masses of amino acids. High MW proteins often face diffusion barriers in thick mucin networks.")
+
     st.divider()
-    st.markdown("### 2. Mutation Prediction (B-Factor Theory)")
+
+    st.markdown("### 🌡️ 2. Mutation Prediction via B-Factor Dynamics")
+    st.write("""
+    The **Debye-Waller Factor** (B-factor) reflects the thermal displacement of atoms. In enzyme engineering, high B-factor regions 
+    represent **structural flexibility hotspots**. 
+    """)
+    
     st.latex(r"B_i = 8\pi^2 \langle u_i^2 \rangle")
-    st.latex(r"""Score = \left( \frac{B_{res}}{B_{max}} \right) \times 100""")
+    
+    st.write("""
+    Our pipeline identifies these flexible loops. By mutating these residues to more rigid amino acids, we can enhance the 
+    **Thermostability** of the enzyme. For mucin glycoproteins, an optimized enzyme must remain active despite the 
+    high viscosity and potential inhibitors present in the secretion.
+    """)
+    st.latex(r"""Flexibility\_Score = \left( \frac{B_{residue}}{B_{maximum}} \right) \times 100""")
 
 # --- 6. PAGE: ABOUT US ---
 elif page == "👥 ABOUT US":
     st.markdown('<div class="hero-text"><p class="sub-title">Institutional Profile</p><h1 class="main-title">Advancing Computational Pharmaceutics</h1></div>', unsafe_allow_html=True)
-    st.write("**Vinayaka Mission's College of Pharmacy**")
-    st.info("Focus: Optimization of enzymatic mucosal clearance for mucin glycoprotein degradation.")
+    
+    st.markdown("### 🏛️ Vinayaka Mission's College of Pharmacy")
+    st.write("""
+    A constituent college of Vinayaka Mission's Research Foundation, our institution is at the forefront of 
+    pharmaceutical innovation. This platform was developed as part of advanced research into **In-Silico Drug Discovery** and **Computational Proteomics**.
+    """)
+    
+    st.success("""
+    **Mission Objective:** To bridge the gap between traditional Wet-Lab pharmacy and high-performance 
+    computational modeling. We focus on training the next generation of pharmacists to utilize Python-based 
+    bioinformatics for solving complex biological challenges.
+    """)
+
+    st.markdown("### 🧪 Research Initiative: Mucin Optimization")
+    st.info("""
+    **Project Goal:** The primary focus of this study is the enzymatic degradation of **Mucin Glycoproteins**. 
+    Mucus hypersecretion is a hallmark of various respiratory pathologies. By utilizing this pipeline, 
+    we aim to optimize enzymes (such as proteases) to effectively reduce mucus viscosity, thereby enhancing 
+    drug penetration and mucosal clearance.
+    """)
 
 # --- 7. PAGE: REFERENCES ---
 elif page == "📚 REFERENCES":
     st.markdown('<div class="hero-text"><p class="sub-title">Scholarly Foundation</p><h1 class="main-title">Scientific References</h1></div>', unsafe_allow_html=True)
-    st.write("* **Biopython:** Cock PJ, et al. 2009.\n* **B-Factor Analysis:** Sun Z, et al. 2019.")
+    
+    st.markdown("### 📖 Primary Technical Literature")
+    st.write("""
+    1. **Cock PJ, Antao T, Chang JT, et al.** (2009). *Biopython: freely available Python tools for computational molecular biology and bioinformatics.* Bioinformatics, 25(11).
+    2. **Gasteiger E, Hoogland C, et al.** (2005). *Protein Identification and Analysis Tools on the ExPASy Server.* The Proteomics Protocols Handbook.
+    3. **Sun Z, Liu Q, Qu G, et al.** (2019). *Utility of B-factors in protein engineering: Interpreting rigidity and flexibility for enzyme optimization.* Chemical Reviews.
+    """)
+
+    st.markdown("### 📖 Mucosal & Structural Research")
+    st.write("""
+    4. **Bansil R, Turner BS.** (2018). *The biology of mucus: Composition, synthesis and organization.* Advanced Drug Delivery Reviews.
+    5. **Berman HM, Westbrook J, et al.** (2000). *The Protein Data Bank.* Nucleic Acids Research.
+    """)
 
 # --- 8. PAGE: CONTACT ---
 elif page == "📧 CONTACT":
-    st.markdown('<div class="hero-text"><p class="sub-title">Collaboration</p><h1 class="main-title">Contact the Researcher</h1></div>', unsafe_allow_html=True)
-    st.markdown("""
-        <div style="background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 15px; border: 1px solid #00d4ff; text-align: center;">
-            <h2 style="color: #00d4ff;">Mowriss.M.G, Mugilarasi.C M</h2>
-            <p>📧 mowrissm@gmail.com</p>
-            <p>📍 Vinayaka Mission's College of Pharmacy</p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="hero-text"><p class="sub-title">Collaboration</p><h1 class="main-title">Contact the Research Team</h1></div>', unsafe_allow_html=True)
+    
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        st.markdown(f"""
+            <div style="background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 15px; border: 1px solid #00d4ff; text-align: center;">
+                <h2 style="color: #00d4ff;">Mowriss.M.G & Mugilarasi.C M</h2>
+                <p style="font-size: 1.1em; color: #94a3b8;">B.Pharm Research Scholars</p>
+                <hr style="border-color: rgba(0, 212, 255, 0.2);">
+                <p><strong>Email:</strong> mowrissm@gmail.com</p>
+                <p><strong>Institution:</strong> Vinayaka Mission's College of Pharmacy</p>
+                <p style="font-style: italic; margin-top: 15px; color: #e2e8f0;">
+                "Dedicated to the development of computational tools for enhanced mucosal drug delivery systems."
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
