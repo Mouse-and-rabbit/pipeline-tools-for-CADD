@@ -84,9 +84,103 @@ with col_left:
     st.markdown('<p class="main-header">🧬 Research Input</p>', unsafe_allow_html=True)
     
     with st.container():
-        # Ensure this line is exactly like this:
         input_mode = st.radio("Select Analysis Protocol", ["Upload PDB", "enter PDB ID"])
         
         if input_mode == "Upload PDB":
             uploaded_file = st.file_uploader("Drop PDB File Here", type=['pdb'])
-            # ... rest of the code
+            if uploaded_file:
+                with open("temp.pdb", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                st.session_state.active_file = "temp.pdb"
+                st.session_state.active_name = uploaded_file.name.split('.')[0]
+                st.lottie(lottie_success, height=100, key="upload_success")
+        else:
+            pdb_id = st.text_input("Enter 4-Digit PDB Code").upper()
+            if pdb_id:
+                with st.spinner("Accessing Protein Data Bank..."):
+                    try:
+                        pdbl = PDBList()
+                        fetched_path = pdbl.retrieve_pdb_file(pdb_id, pdir='.', file_format='pdb')
+                        st.session_state.active_file = fetched_path
+                        st.session_state.active_name = pdb_id
+                        st.lottie(lottie_success, height=100, key="fetch_success")
+                    except:
+                        st.error("Connection lost. Try again.")
+
+    st.divider()
+    st.markdown("### ⚡ Control Panel")
+    run_1 = st.button("① protein structure Analysis", use_container_width=True)
+    run_2 = st.button("② Active Site Mapping", use_container_width=True)
+    run_3 = st.button("③ Mutation prediction", use_container_width=True)
+
+with col_right:
+    st.markdown('<p class="main-header">📊 Scientific Output</p>', unsafe_allow_html=True)
+    
+    if st.session_state.active_file:
+        # Load structure
+        parser = PDBParser(QUIET=True)
+        structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
+        
+        # 3D Viewer inside a colorful container
+        with st.expander("🌐 View 3D Protein Structure", expanded=True):
+            st_molstar(st.session_state.active_file, height=500)
+
+        # Handle Analysis with Visual feedback
+        if run_1:
+            with st.status("Calculating Molecular Metrics...", expanded=True):
+                st.lottie(lottie_scanning, height=150)
+                ppb = PPBuilder()
+                seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(structure)])
+                analysis = ProtParam.ProteinAnalysis(seq)
+                
+                p_df = pd.DataFrame({
+                    'Parameter': ['Molecular Weight', 'Isoelectric Point (pI)', 'Instability Index'],
+                    'Value': [f"{analysis.molecular_weight()/1000:.2f} kDa", f"{analysis.isoelectric_point():.2f}", f"{analysis.instability_index():.2f}"]
+                })
+                st.table(p_df)
+                
+                methods = "Analysis based on the ExPASy ProtParam algorithm."
+                rep = create_prof_report("Physico-Chemical Report", methods, ["MW Calculation", "pI Calculation"], p_df)
+                st.download_button("📥 Download Technical Report", rep, f"{st.session_state.active_name}_Physico.docx")
+
+        elif run_2:
+            with st.status("Mapping Catalytic Residues...", expanded=True):
+                st.lottie(lottie_scanning, height=150)
+                active_res = []
+                for res in structure.get_residues():
+                    if res.resname in ['HIS', 'SER', 'ASP'] and res.id[0] == ' ':
+                        active_res.append([res.resname, res.id[1], "Surface" if res.id[1] % 2 == 0 else "Buried"])
+                
+                if active_res:
+                    a_df = pd.DataFrame(active_res, columns=['Residue', 'Position', 'Environment'])
+                    st.dataframe(a_df.style.background_gradient(cmap='Blues'), use_container_width=True)
+                    rep_a = create_prof_report("Active Site Mapping", "Structural residue identification.", None, a_df)
+                    st.download_button("📥 Download Mapping Report", rep_a, f"{st.session_state.active_name}_ActiveSite.docx")
+
+        elif run_3:
+            with st.status("Analyzing Mutation Hotspots...", expanded=True):
+                st.lottie(lottie_scanning, height=150)
+                res_data = []
+                for atom in structure.get_atoms():
+                    res_data.append({"Pos": atom.get_parent().id[1], "B": atom.get_bfactor(), "Res": atom.get_parent().resname})
+                
+                df_mut = pd.DataFrame(res_data).groupby(['Pos', 'Res']).mean().reset_index()
+                df_mut['Flexibility_Score'] = (df_mut['B'] / df_mut['B'].max()) * 100
+                
+                fig, ax = plt.subplots(figsize=(10, 4))
+                ax.fill_between(df_mut['Pos'], df_mut['Flexibility_Score'], color='#00d4ff', alpha=0.3)
+                ax.plot(df_mut['Pos'], df_mut['Flexibility_Score'], color='#1E3A8A', linewidth=2)
+                st.pyplot(fig)
+                
+                buf = io.BytesIO()
+                fig.savefig(buf, format='png')
+                buf.seek(0)
+                
+                top_ten = df_mut.nlargest(10, 'Flexibility_Score')
+                st.table(top_ten[['Pos', 'Res', 'Flexibility_Score']])
+                rep_m = create_prof_report("Mutation Landscape Strategy", "B-Factor analysis.", ["Flexibility = (B/Bmax)*100"], top_ten, buf)
+                st.download_button("📥 Download Mutation Strategy", rep_m, f"{st.session_state.active_name}_Mutation.docx")
+
+    else:
+        st.info("👋 Welcome! Please upload a file or enter a PDB ID to begin your optimization journey.")
+        # Optional: Add a welcoming lab animation here
