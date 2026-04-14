@@ -71,11 +71,13 @@ with col_left:
         uploaded_file = st.file_uploader("Select Structure", type=['pdb'])
         if uploaded_file:
             file_path = "temp.pdb"
-            with open(file_path, "wb") as f: f.write(uploaded_file.getbuffer())
+            with open(file_path, "wb") as f: 
+                f.write(uploaded_file.getbuffer())
             pdb_name = uploaded_file.name.split('.')[0]
     else:
         pdb_id = st.text_input("Enter PDB Code").upper()
         if pdb_id:
+            # retrieve_pdb_file often returns the path to the downloaded file
             file_path = PDBList().retrieve_pdb_file(pdb_id, pdir='.', file_format='pdb')
             pdb_name = pdb_id
 
@@ -88,83 +90,12 @@ with col_right:
     st.markdown('<p class="main-header">Scientific Output</p>', unsafe_allow_html=True)
     
     if file_path:
-        parser = PDBParser(QUIET=True)
-        structure = parser.get_structure(pdb_name, file_path)
+        # --- ROBUST PARSING BLOCK ---
+        try:
+            parser = PDBParser(QUIET=True)
+            structure = parser.get_structure(pdb_name, file_path)
+        except Exception as e:
+            st.error(f"PDB Error: The file structure is invalid or corrupted. Details: {e}")
+            st.stop()
 
-        # SECTION 1: PHYSICO
-        if run_1:
-            st.subheader("I. Molecular Characterization")
-            st_molstar(file_path, height=500) 
-            
-            st.latex(r"pI \approx \sum (Charge_{AminoAcids} = 0)")
-            ppb = PPBuilder()
-            seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(structure)])
-            analysis = ProtParam.ProteinAnalysis(seq)
-            
-            p_df = pd.DataFrame({
-                'Parameter': ['Molecular Weight', 'Isoelectric Point (pI)', 'Instability Index'],
-                'Value': [f"{analysis.molecular_weight()/1000:.2f} kDa", f"{analysis.isoelectric_point():.2f}", f"{analysis.instability_index():.2f}"]
-            })
-            st.table(p_df)
-            
-            methods = "Analysis based on the ExPASy ProtParam algorithm."
-            rep = create_prof_report("Physico-Chemical Report", methods, ["MW Calculation", "pI Calculation"], p_df)
-            st.download_button("📥 Download Technical Report", rep, f"{pdb_name}_Physico.docx", key="dl_1")
-
-        # SECTION 2: ACTIVE SITE
-        if run_2:
-            st.subheader("II. Catalytic Residue Mapping")
-            st_molstar(file_path, height=500)
-            
-            active_res = []
-            for res in structure.get_residues():
-                if res.resname in ['HIS', 'SER', 'ASP'] and res.id[0] == ' ':
-                    active_res.append([res.resname, res.id[1], "Surface" if res.id[1] % 2 == 0 else "Buried"])
-            
-            a_df = pd.DataFrame(active_res, columns=['Residue', 'Position', 'Environment'])
-            st.dataframe(a_df, use_container_width=True)
-            
-            rep_a = create_prof_report("Active Site Mapping", "Structural residue identification via Biopython.", None, a_df)
-            st.download_button("📥 Download Mapping Report", rep_a, f"{pdb_name}_ActiveSite.docx", key="dl_2")
-
-        # --- SECTION 3: MUTATION ---
-        if run_3:
-            st.subheader("III. Structural Hotspot Landscape")
-            st_molstar(file_path, height=500)
-
-            # --- 1. Scientific Data Generation ---
-            res_data = []
-            for atom in structure.get_atoms():
-                res_data.append({
-                    "Pos": atom.get_parent().id[1],
-                    "B": atom.get_bfactor(),
-                    "Res": atom.get_parent().resname
-                })
-            df_mut = pd.DataFrame(res_data).groupby(['Pos', 'Res']).mean().reset_index()
-            df_mut['Flexibility_Score'] = (df_mut['B'] / df_mut['B'].max()) * 100
-            
-            # --- 2. Professional Graph Styling ---
-            purple_line = '#8F8FDB'
-            sky_blue_fill = '#CCEEFF'
-            fig, ax = plt.subplots(figsize=(10, 4))
-
-            ax.fill_between(df_mut['Pos'], df_mut['Flexibility_Score'], color=sky_blue_fill, alpha=0.7)
-            ax.plot(df_mut['Pos'], df_mut['Flexibility_Score'], color=purple_line, linewidth=1.8, label='B-Factor Profile')
-
-            ax.set_title(f"Structural Hotspot Profile: {pdb_name.upper()}", fontsize=14, fontweight='bold')
-            ax.set_xlabel("Residue Position", fontsize=11)
-            ax.set_ylabel("Hotspot Score (B-Factor %)", fontsize=11)
-            ax.grid(True, linestyle='--', alpha=0.5, color='#e0e0e0')
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            plt.tight_layout()
-            
-            st.pyplot(fig)
-            
-            # --- 3. Save Plot to Buffer ---
-            buf = io.BytesIO()
-            fig.savefig(buf, format='png', dpi=300)
-            buf.seek(0)
-            
-            # --- 4. Technical Data Table ---
-            st.write("**Top 10 Mutation Candidates (High-Flexibility Areas):**")
+        # SECTION 1: PHYS
