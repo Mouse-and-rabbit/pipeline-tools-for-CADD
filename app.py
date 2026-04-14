@@ -61,25 +61,39 @@ def create_prof_report(title, methodology, formulas, df, plot_buf=None):
 # --- 3. UI LAYOUT ---
 col_left, col_right = st.columns([1, 2], gap="large")
 
+# Initialize session state for the file path
+if 'active_file' not in st.session_state:
+    st.session_state.active_file = None
+if 'active_name' not in st.session_state:
+    st.session_state.active_name = "Target_Enzyme"
+
 with col_left:
     st.markdown('<p class="main-header">Research Input</p>', unsafe_allow_html=True)
     input_mode = st.radio("Protocol", ["Upload PDB", "Remote PDB ID"])
-    file_path = None
-    pdb_name = "Target_Enzyme"
-
+    
     if input_mode == "Upload PDB":
         uploaded_file = st.file_uploader("Select Structure", type=['pdb'])
         if uploaded_file:
-            file_path = "temp.pdb"
-            with open(file_path, "wb") as f: 
+            # We save it to session state so it persists
+            with open("temp.pdb", "wb") as f:
                 f.write(uploaded_file.getbuffer())
-            pdb_name = uploaded_file.name.split('.')[0]
+            st.session_state.active_file = "temp.pdb"
+            st.session_state.active_name = uploaded_file.name.split('.')[0]
+            st.success(f"Loaded: {st.session_state.active_name}")
+            
     else:
-        pdb_id = st.text_input("Enter PDB Code").upper()
+        pdb_id = st.text_input("Enter PDB Code (e.g., 1A8M)").upper()
         if pdb_id:
-            # retrieve_pdb_file often returns the path to the downloaded file
-            file_path = PDBList().retrieve_pdb_file(pdb_id, pdir='.', file_format='pdb')
-            pdb_name = pdb_id
+            with st.spinner("Downloading from PDB..."):
+                try:
+                    pdbl = PDBList()
+                    # This fetches the file and returns the local path
+                    fetched_path = pdbl.retrieve_pdb_file(pdb_id, pdir='.', file_format='pdb')
+                    st.session_state.active_file = fetched_path
+                    st.session_state.active_name = pdb_id
+                    st.success(f"Fetched: {pdb_id}")
+                except:
+                    st.error("Could not fetch PDB ID. Check your connection.")
 
     st.divider()
     run_1 = st.button("① Execute Physico-Chemical Analysis", use_container_width=True)
@@ -89,13 +103,12 @@ with col_left:
 with col_right:
     st.markdown('<p class="main-header">Scientific Output</p>', unsafe_allow_html=True)
     
-    if file_path:
-        # --- ROBUST PARSING BLOCK ---
+    # Use the session state version of the file
+    if st.session_state.active_file:
         try:
             parser = PDBParser(QUIET=True)
-            structure = parser.get_structure(pdb_name, file_path)
-        except Exception as e:
-            st.error(f"PDB Error: The file structure is invalid or corrupted. Details: {e}")
-            st.stop()
-
+            structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
+            
+            # NOW all your "if run_1:", "if run_2:", etc. code goes here...
+            # (Keep the rest of your Section 1, 2, and 3 code exactly as it is)
         # SECTION 1: PHYS
