@@ -1,0 +1,5 @@
+matplotlib
+pandas
+biopython
+python-docx
+streamlit-molstar
