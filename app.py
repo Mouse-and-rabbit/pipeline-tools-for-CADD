@@ -103,28 +103,49 @@ with col_left:
 with col_right:
     st.markdown('<p class="main-header">Scientific Output</p>', unsafe_allow_html=True)
     
-    # Use the session state version of the file
     if st.session_state.active_file:
         try:
+            # 1. Parse the structure once per rerun
             parser = PDBParser(QUIET=True)
             structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
             
-            # SECTION 1: Physico-Chemical Analysis
+            # 2. Check which button was clicked
             if run_1:
-                st.subheader("Physico-Chemical Analysis")
-                # Add your analysis code here
+                st.subheader("I. Molecular Characterization")
+                st_molstar(st.session_state.active_file, height=500) 
                 
-            # SECTION 2: Active Site Mapping
-            if run_2:
-                st.subheader("Catalytic Active Site")
-                # Add your active site code here
-                
-            # SECTION 3: Mutation Landscape
-            if run_3:
-                st.subheader("Mutation Landscape")
-                # Add your mutation prediction code here
-                
+                ppb = PPBuilder()
+                peptides = ppb.build_peptides(structure)
+                if peptides:
+                    seq = "".join([str(p.get_sequence()) for p in peptides])
+                    analysis = ProtParam.ProteinAnalysis(seq)
+                    
+                    p_df = pd.DataFrame({
+                        'Parameter': ['Molecular Weight', 'pI', 'Instability Index'],
+                        'Value': [f"{analysis.molecular_weight()/1000:.2f} kDa", 
+                                 f"{analysis.isoelectric_point():.2f}", 
+                                 f"{analysis.instability_index():.2f}"]
+                    })
+                    st.table(p_df)
+                else:
+                    st.warning("No peptide chains found in this PDB.")
+
+            elif run_2:
+                st.subheader("II. Catalytic Residue Mapping")
+                st_molstar(st.session_state.active_file, height=500)
+                # ... rest of your run_2 code ...
+
+            elif run_3:
+                st.subheader("III. Structural Hotspot Landscape")
+                st_molstar(st.session_state.active_file, height=500)
+                # ... rest of your run_3 code ...
+            
+            else:
+                # Default view if no button is clicked yet
+                st.info("Structure loaded successfully. Click a protocol button on the left to begin analysis.")
+                st_molstar(st.session_state.active_file, height=500)
+
         except Exception as e:
-            st.error(f"Error parsing PDB file: {e}")
+            st.error(f"Error processing structure: {e}")
     else:
-        st.info("Please upload or fetch a PDB file to begin analysis.")
+        st.info("Waiting for Research Input... Please upload a PDB or enter a valid PDB ID.")
