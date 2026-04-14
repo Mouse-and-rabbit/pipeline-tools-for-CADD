@@ -1,7 +1,7 @@
-streamlit
-biopython
+matplotlib
 pandas
 numpy
-plotly
+biopython
 python-docx
 streamlit-molstar
+plotly
