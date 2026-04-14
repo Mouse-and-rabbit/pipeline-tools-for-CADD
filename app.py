@@ -109,6 +109,22 @@ with col_right:
             parser = PDBParser(QUIET=True)
             structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
             
-            # NOW all your "if run_1:", "if run_2:", etc. code goes here...
-            # (Keep the rest of your Section 1, 2, and 3 code exactly as it is)
-        # SECTION 1: PHYS
+            # SECTION 1: Physico-Chemical Analysis
+            if run_1:
+                st.subheader("Physico-Chemical Analysis")
+                # Add your analysis code here
+                
+            # SECTION 2: Active Site Mapping
+            if run_2:
+                st.subheader("Catalytic Active Site")
+                # Add your active site code here
+                
+            # SECTION 3: Mutation Landscape
+            if run_3:
+                st.subheader("Mutation Landscape")
+                # Add your mutation prediction code here
+                
+        except Exception as e:
+            st.error(f"Error parsing PDB file: {e}")
+    else:
+        st.info("Please upload or fetch a PDB file to begin analysis.")
