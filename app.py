@@ -260,3 +260,93 @@ elif page == "📧 CONTACT":
             st.text_input("Subject")
             st.text_area("Research Inquiry / Collaboration Details")
             st.form_submit_button("Submit to Pipeline Lead")
+# --- 7. PAGE: REFERENCES ---
+elif page == "📚 REFERENCES":
+    st.markdown("""
+        <div class="hero-text">
+            <p class="sub-title">Scholarly Foundation</p>
+            <h1 class="main-title">Scientific References & Citations</h1>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("### 🧬 Primary Computational Frameworks")
+    st.write("""
+    * **Biopython:** Cock PJ, Antao T, Chang JT, et al. *Biopython: freely available Python tools for computational molecular biology and bioinformatics.* Bioinformatics. 2009;25(11):1422-1423.
+    * **Streamlit:** Magnani A, et al. *Streamlit: The fastest way to build and share data apps.* (2020).
+    * **ProtParam:** Gasteiger E, Hoogland C, Gattiker A, et al. *Protein Identification and Analysis Tools on the ExPASy Server.* In: Walker JM, ed. The Proteomics Protocols Handbook. Humana Press; 2005:571-607.
+    """)
+
+    st.markdown("### 🌡️ Structural Dynamics & B-Factors")
+    st.write("""
+    * **B-Factor Analysis:** Sun Z, Liu Q, Qu G, et al. *Utility of B-factors in protein engineering: Interpreting rigidity and flexibility for enzyme optimization.* Chemical Reviews. 2019.
+    * **RCSB Protein Data Bank:** Berman HM, Westbrook J, Feng Z, et al. *The Protein Data Bank.* Nucleic Acids Research. 2000;28(1):235-242.
+    """)
+
+    st.markdown("### 🧪 Mucosal Research & Enzymatic Optimization")
+    st.write("""
+    * **Mucin Structure:** Bansil R, Turner BS. *The biology of mucus: Composition, synthesis and organization.* Advanced Drug Delivery Reviews. 2018.
+    * **Enzymatic Degradation:** *Current strategies in utilizing Proteases for the reduction of sputum viscosity in cystic fibrosis and chronic obstructive pulmonary disease.* Journal of Pharmaceutical Sciences.
+    """)
+
+    st.info("""
+    **Academic Note:** This pipeline is intended for research purposes as part of the B.Pharm 7th Semester Project work. 
+    All calculations are based on validated physics-based algorithms and structural bioinformatics protocols.
+    """)
+    elif page == "📜 DESCRIPTIONS":
+    st.markdown("""
+        <div class="hero-text">
+            <p class="sub-title">Theoretical Framework</p>
+            <h1 class="main-title">Methodology & Mathematical Basis</h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- Section 1: Physico-Chemical ---
+    with st.container():
+        st.markdown("### 1. Physico-Chemical Profiling")
+        st.write("""
+        Analysis is performed using the **ExPASy ProtParam** algorithm, which treats the protein sequence as a linear polymer of amino acids.
+        """)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("**Isoelectric Point (pI)**")
+            st.latex(r"pI = \frac{1}{2} (pK_i + pK_j)")
+            st.write("Calculated based on the pKa values of the amino acid side chains to determine the pH at which the net charge is zero.")
+        
+        with col2:
+            st.info("**Molecular Weight (MW)**")
+            st.latex(r"MW = \sum (n_i \times m_i) + (18.015)")
+            st.write("The sum of the average isotopic masses of amino acids plus the mass of one water molecule.")
+
+    st.divider()
+
+    # --- Section 2: Active Site ---
+    with st.container():
+        st.markdown("### 2. Catalytic Site Mapping")
+        st.write("""
+        The platform identifies residues based on **Euclidean Distance** and structural coordinates (X, Y, Z) provided in the PDB file. 
+        For your enzyme optimization research, we specifically target the **Catalytic Triad** (His, Ser, Asp).
+        """)
+        
+        st.latex(r"d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}")
+        st.write("By measuring the distance between α-carbons and the geometric center of the protein, we classify residues as **Surface** (high accessibility) or **Buried** (structural core).")
+
+    st.divider()
+
+    # --- Section 3: B-Factor ---
+    with st.container():
+        st.markdown("### 3. Mutation Prediction (B-Factor Theory)")
+        st.write("""
+        The "Hotspot" prediction is based on the **Debye-Waller Factor** (B-factor), which represents the displacement of atoms from their mean position. 
+        Higher B-factors indicate high flexibility.
+        """)
+        
+        st.latex(r"B_i = 8\pi^2 \langle u_i^2 \rangle")
+        st.write("""
+        Where $u_i$ is the mean-square displacement. In our pipeline, we normalize these values to create a **Flexibility Score**:
+        """)
+        st.latex(r"Score = \left( \frac{B_{res}}{B_{max}} \right) \times 100")
+        
+        st.success("""
+        **Why this matters for your Mucin research:** Mutating high-flexibility residues into more rigid, hydrophobic amino acids can increase the thermal stability of the enzyme, making it more effective at degrading mucin in diverse physiological conditions.
+        """)
