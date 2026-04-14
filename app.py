@@ -14,11 +14,15 @@ from streamlit_molstar import st_molstar
 # --- 1. CONFIG & STYLING ---
 st.set_page_config(page_title="Enzyme Optimization Hub", layout="wide", page_icon="🧬")
 
-# Function to load Lottie animations
+# Function to load Lottie animations with error handling
 def load_lottieurl(url: str):
-    r = requests.get(url)
-    if r.status_code != 200: return None
-    return r.json()
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except Exception:
+        return None
 
 # High-quality Lab Animations
 lottie_scanning = load_lottieurl("https://assets5.lottiefiles.com/packages/lf20_m6cu9zoc.json")
@@ -50,12 +54,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. REPORT GENERATOR (Unchanged) ---
+# --- 2. REPORT GENERATOR ---
 def create_prof_report(title, methodology, formulas, df, plot_buf=None):
     doc = Document()
     header = doc.add_heading(title, 0)
     header.runs[0].font.color.rgb = RGBColor(30, 58, 170)
-    # ... (Same internal logic as your current working function)
     doc.add_heading('Methodology', level=1)
     doc.add_paragraph(methodology)
     if formulas:
@@ -93,7 +96,8 @@ with col_left:
                     f.write(uploaded_file.getbuffer())
                 st.session_state.active_file = "temp.pdb"
                 st.session_state.active_name = uploaded_file.name.split('.')[0]
-                st.lottie(lottie_success, height=100, key="upload_success")
+                if lottie_success:
+                    st_lottie(lottie_success, height=100, key="upload_success")
         else:
             pdb_id = st.text_input("Enter 4-Digit PDB Code").upper()
             if pdb_id:
@@ -103,7 +107,8 @@ with col_left:
                         fetched_path = pdbl.retrieve_pdb_file(pdb_id, pdir='.', file_format='pdb')
                         st.session_state.active_file = fetched_path
                         st.session_state.active_name = pdb_id
-                        st.lottie(lottie_success, height=100, key="fetch_success")
+                        if lottie_success:
+                            st_lottie(lottie_success, height=100, key="fetch_success")
                     except:
                         st.error("Connection lost. Try again.")
 
@@ -117,18 +122,16 @@ with col_right:
     st.markdown('<p class="main-header">📊 Scientific Output</p>', unsafe_allow_html=True)
     
     if st.session_state.active_file:
-        # Load structure
         parser = PDBParser(QUIET=True)
         structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
         
-        # 3D Viewer inside a colorful container
         with st.expander("🌐 View 3D Protein Structure", expanded=True):
             st_molstar(st.session_state.active_file, height=500)
 
-        # Handle Analysis with Visual feedback
         if run_1:
             with st.status("Calculating Molecular Metrics...", expanded=True):
-                st.lottie(lottie_scanning, height=150)
+                if lottie_scanning:
+                    st_lottie(lottie_scanning, height=150, key="scan_1")
                 ppb = PPBuilder()
                 seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(structure)])
                 analysis = ProtParam.ProteinAnalysis(seq)
@@ -145,7 +148,8 @@ with col_right:
 
         elif run_2:
             with st.status("Mapping Catalytic Residues...", expanded=True):
-                st.lottie(lottie_scanning, height=150)
+                if lottie_scanning:
+                    st_lottie(lottie_scanning, height=150, key="scan_2")
                 active_res = []
                 for res in structure.get_residues():
                     if res.resname in ['HIS', 'SER', 'ASP'] and res.id[0] == ' ':
@@ -159,7 +163,8 @@ with col_right:
 
         elif run_3:
             with st.status("Analyzing Mutation Hotspots...", expanded=True):
-                st.lottie(lottie_scanning, height=150)
+                if lottie_scanning:
+                    st_lottie(lottie_scanning, height=150, key="scan_3")
                 res_data = []
                 for atom in structure.get_atoms():
                     res_data.append({"Pos": atom.get_parent().id[1], "B": atom.get_bfactor(), "Res": atom.get_parent().resname})
@@ -183,4 +188,3 @@ with col_right:
 
     else:
         st.info("👋 Welcome! Please upload a file or enter a PDB ID to begin your optimization journey.")
-        # Optional: Add a welcoming lab animation here
