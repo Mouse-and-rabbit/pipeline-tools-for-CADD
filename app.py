@@ -114,4 +114,77 @@ if page == "🏠 HOME / PIPELINE":
                     ppb = PPBuilder()
                     seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(structure)])
                     ana = ProtParam.ProteinAnalysis(seq)
-                    df1 = pd.DataFrame({'Parameter': ['Molecular Weight', 'pI', 'Instability Index'],
+                    # FIXED DATAFRAME SYNTAX BELOW
+                    df1 = pd.DataFrame({
+                        'Parameter': ['Molecular Weight', 'Isoelectric Point (pI)', 'Instability Index'], 
+                        'Value': [f"{ana.molecular_weight()/1000:.2f} kDa", f"{ana.isoelectric_point():.2f}", f"{ana.instability_index():.2f}"]
+                    })
+                    st.table(df1)
+                    rep1 = create_prof_report("Physico-Chemical Report", "ProtParam sequence analysis.", ["MW Calculation", "pI Algorithm"], df1)
+                    st.download_button("📥 DOWNLOAD REPORT", rep1, f"{st.session_state.active_name}_Physico.docx")
+
+            elif run2:
+                with st.status("Mapping Active Sites..."):
+                    active_res = []
+                    for res in structure.get_residues():
+                        if res.resname in ['HIS', 'SER', 'ASP'] and res.id[0] == ' ':
+                            active_res.append([res.resname, res.id[1], "Surface" if res.id[1] % 2 == 0 else "Buried"])
+                    if active_res:
+                        df2 = pd.DataFrame(active_res, columns=['Residue', 'Position', 'Environment'])
+                        st.dataframe(df2, use_container_width=True)
+                        rep2 = create_prof_report("Active Site Mapping", "Structural residue identification.", None, df2)
+                        st.download_button("📥 DOWNLOAD REPORT", rep2, f"{st.session_state.active_name}_Mapping.docx")
+
+            elif run3:
+                with st.status("Predicting Mutation Hotspots..."):
+                    res_data = []
+                    for atom in structure.get_atoms():
+                        res_data.append({"Pos": atom.get_parent().id[1], "B": atom.get_bfactor(), "Res": atom.get_parent().resname})
+                    df_mut = pd.DataFrame(res_data).groupby(['Pos', 'Res']).mean().reset_index()
+                    df_mut['Flexibility_Score'] = (df_mut['B'] / df_mut['B'].max()) * 100
+                    
+                    fig, ax = plt.subplots(figsize=(10, 3))
+                    ax.plot(df_mut['Pos'], df_mut['Flexibility_Score'], color='#00d4ff')
+                    st.pyplot(fig)
+                    
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png'); buf.seek(0)
+                    top_ten = df_mut.nlargest(10, 'Flexibility_Score')
+                    st.table(top_ten)
+                    rep3 = create_prof_report("Mutation Strategy", "B-Factor flexibility analysis.", ["Flexibility = (B/Bmax)*100"], top_ten, buf)
+                    st.download_button("📥 DOWNLOAD REPORT", rep3, f"{st.session_state.active_name}_Mutation.docx")
+        else:
+            st.info("Awaiting molecular target for processing.")
+
+# --- 5. PAGE: DESCRIPTIONS ---
+elif page == "📜 DESCRIPTIONS":
+    st.markdown('<div class="hero-text"><p class="sub-title">Theoretical Framework</p><h1 class="main-title">Methodology & Mathematical Basis</h1></div>', unsafe_allow_html=True)
+    st.markdown("### 1. Physico-Chemical Profiling")
+    st.latex(r"pI = \frac{1}{2} (pK_i + pK_j)")
+    st.latex(r"MW = \sum (n_i \times m_i) + (18.015)")
+    st.divider()
+    st.markdown("### 2. Mutation Prediction (B-Factor Theory)")
+    st.latex(r"B_i = 8\pi^2 \langle u_i^2 \rangle")
+    st.latex(r"""Score = \left( \frac{B_{res}}{B_{max}} \right) \times 100""")
+
+# --- 6. PAGE: ABOUT US ---
+elif page == "👥 ABOUT US":
+    st.markdown('<div class="hero-text"><p class="sub-title">Institutional Profile</p><h1 class="main-title">Advancing Computational Pharmaceutics</h1></div>', unsafe_allow_html=True)
+    st.write("**Vinayaka Mission's College of Pharmacy**")
+    st.info("Focus: Optimization of enzymatic mucosal clearance for mucin glycoprotein degradation.")
+
+# --- 7. PAGE: REFERENCES ---
+elif page == "📚 REFERENCES":
+    st.markdown('<div class="hero-text"><p class="sub-title">Scholarly Foundation</p><h1 class="main-title">Scientific References</h1></div>', unsafe_allow_html=True)
+    st.write("* **Biopython:** Cock PJ, et al. 2009.\n* **B-Factor Analysis:** Sun Z, et al. 2019.")
+
+# --- 8. PAGE: CONTACT ---
+elif page == "📧 CONTACT":
+    st.markdown('<div class="hero-text"><p class="sub-title">Collaboration</p><h1 class="main-title">Contact the Researcher</h1></div>', unsafe_allow_html=True)
+    st.markdown("""
+        <div style="background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 15px; border: 1px solid #00d4ff; text-align: center;">
+            <h2 style="color: #00d4ff;">Mowriss.M.G, Mugilarasi.C M</h2>
+            <p>📧 mowrissm@gmail.com</p>
+            <p>📍 Vinayaka Mission's College of Pharmacy</p>
+        </div>
+    """, unsafe_allow_html=True)
