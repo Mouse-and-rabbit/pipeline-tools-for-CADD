@@ -244,7 +244,7 @@ elif page == "📧 CONTACT":
     with c2:
         st.markdown(f"""
             <div style="background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 15px; border: 1px solid #00d4ff; text-align: center;">
-                <h2 style="color: #00d4ff;">Mowriss.M.G & Mugilarasi.C M</h2>
+                <h2 style="color: #00d4ff;">Mowriss.M.G & Mugilarasi.C </h2>
                 <p style="font-size: 1.1em; color: #94a3b8;">B.Pharm Research Scholars</p>
                 <hr style="border-color: rgba(0, 212, 255, 0.2);">
                 <p><strong>Email:</strong> mowrissm@gmail.com</p>
