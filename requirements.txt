@@ -3,3 +3,4 @@ pandas
 biopython
 python-docx
 streamlit-molstar
+streamlit-lottie
