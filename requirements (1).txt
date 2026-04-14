@@ -2,7 +2,6 @@ streamlit
 biopython
 pandas
 numpy
-matplotlib
 plotly
 python-docx
 streamlit-molstar
