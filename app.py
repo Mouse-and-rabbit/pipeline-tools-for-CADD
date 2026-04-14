@@ -84,4 +84,9 @@ with col_left:
     st.markdown('<p class="main-header">🧬 Research Input</p>', unsafe_allow_html=True)
     
     with st.container():
-        input_mode = st.radio("Select Analysis Protocol", ["Upload PDB",
+        # Ensure this line is exactly like this:
+        input_mode = st.radio("Select Analysis Protocol", ["Upload PDB", "enter PDB ID"])
+        
+        if input_mode == "Upload PDB":
+            uploaded_file = st.file_uploader("Drop PDB File Here", type=['pdb'])
+            # ... rest of the code
