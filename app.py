@@ -211,9 +211,9 @@ elif page == "👥 ABOUT US":
     bioinformatics for solving complex biological challenges.
     """)
 
-    st.markdown("### 🧪 Research Initiative: Mucin Optimization")
+    st.markdown("### 🧪 Research Initiative")
     st.info("""
-    **Project Goal:** ## **The AI & Deep Learning Research Framework The core of this initiative lies in the construction of an end-to-end **computational pipeline** designed to bridge the gap between raw data and actionable insights through **Machine Learning (ML)** and **Deep Learning (DL)**. By implementing advanced **Neural Network architectures**, the system automates high-dimensional feature extraction and pattern recognition, moving beyond traditional statistical limits. The pipeline is engineered to handle complex data preprocessing, model training via **gradient-based optimization**, and rigorous validation using **predictive analytics**. This integrated AI ecosystem allows for the rapid iteration of hypotheses, utilizing **Transformer-based models** and **Generative AI** to simulate scenarios and predict outcomes with high precision, ultimately transforming data-driven discovery into a scalable, automated workflow..
+    **Project Goal:** ## **The core of this initiative lies in the construction of an end-to-end **computational pipeline** designed to bridge the gap between raw data and actionable insights through **Machine Learning (ML)** and **Deep Learning (DL)**. By implementing advanced **Neural Network architectures**, the system automates high-dimensional feature extraction and pattern recognition, moving beyond traditional statistical limits. The pipeline is engineered to handle complex data preprocessing, model training via **gradient-based optimization**, and rigorous validation using **predictive analytics**. This integrated AI ecosystem allows for the rapid iteration of hypotheses, utilizing **Transformer-based models** and **Generative AI** to simulate scenarios and predict outcomes with high precision, ultimately transforming data-driven discovery into a scalable, automated workflow..
     """)
 
 # --- 7. PAGE: REFERENCES ---
@@ -227,10 +227,17 @@ elif page == "📚 REFERENCES":
     3. **Sun Z, Liu Q, Qu G, et al.** (2019). *Utility of B-factors in protein engineering: Interpreting rigidity and flexibility for enzyme optimization.* Chemical Reviews.
     """)
 
-    st.markdown("### 📖 Mucosal & Structural Research")
+    st.markdown("### 📖 protein & Structural Research")
     st.write("""
-    4. **Bansil R, Turner BS.** (2018). *The biology of mucus: Composition, synthesis and organization.* Advanced Drug Delivery Reviews.
-    5. **Berman HM, Westbrook J, et al.** (2000). *The Protein Data Bank.* Nucleic Acids Research.
+    4.**Abramson J, Adler J, Dunger J, Evans R, Green T, Pritzel A, et al**(2022). Accurate structure prediction of biomolecular interactions with AlphaFold 3. Nature. 2024;630(8016):493-500. doi: 10.1038/s41586-024-07487-w.
+
+    5.Piovesan D, Monzon AM, Tosatto SCE. AlphaFold Protein Structure Database 2025: a redesigned interface and updated structural coverage. Nucleic Acids Res. 2025 Jan 6;53(D1):D461-D469. doi: 10.1093/nar/gkae1014.
+
+    6.Khan A, Patton-Parfyonov A, Zhang Y. Protein structure prediction powered by artificial intelligence: from biochemical foundations to practical applications. Front Mol Biosci. 2026;13:1767821. doi: 10.3389/fmolb.2026.1767821.
+
+    7.Barrio-Hernandez I, Yeo J, Durairaj J, Steinegger M, Beltrao P. Emerging frontiers in protein structure prediction following the AlphaFold revolution. J R Soc Interface. 2025 Apr 16;22(225):20240886. doi: 10.1098/rsif.2024.0886
+    8. **Bansil R, Turner BS.** (2018). *The biology of mucus: Composition, synthesis and organization.* Advanced Drug Delivery Reviews.
+    9. **Berman HM, Westbrook J, et al.** (2000). *The Protein Data Bank.* Nucleic Acids Research.
     """)
 
 # --- 8. PAGE: CONTACT ---
