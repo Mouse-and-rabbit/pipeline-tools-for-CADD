@@ -115,6 +115,52 @@ with tabs[0]:
             if run1:
                 with st.status("Analyzing Molecular Metrics..."):
                     if lottie_scan: st_lottie(lottie_scan, height=100, key="s1")
+# --- 4. PAGE: HOME / PIPELINE ---
+with tabs[0]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
+
+    if 'active_file' not in st.session_state: st.session_state.active_file = None
+    if 'active_name' not in st.session_state: st.session_state.active_name = "Target"
+
+    col_left, col_right = st.columns([1, 2], gap="large")
+
+    with col_left:
+        st.markdown("### 🧪 RESEARCH INPUT")
+        mode = st.radio("Protocol", ["Upload PDB", "Enter PDB ID"], horizontal=True)
+        if mode == "Upload PDB":
+            up = st.file_uploader("Upload Structure", type=['pdb'])
+            if up:
+                with open("temp.pdb", "wb") as f: f.write(up.getbuffer())
+                st.session_state.active_file = "temp.pdb"
+                st.session_state.active_name = up.name.split('.')[0]
+        else:
+            pid = st.text_input("PDB ID (e.g., 3FXI)").upper()
+            if pid:
+                with st.spinner("Accessing Protein Data Bank..."):
+                    try:
+                        pdbl = PDBList()
+                        st.session_state.active_file = pdbl.retrieve_pdb_file(pid, pdir='.', file_format='pdb')
+                        st.session_state.active_name = pid
+                    except: st.error("Fetch Error")
+
+        st.divider()
+        st.markdown("### ⚡ CORE UTILITIES")
+        run1 = st.button("① Protein Structure Analysis")
+        run2 = st.button("② Active Site Mapping")
+        run3 = st.button("③ Mutation Prediction")
+
+    with col_right:
+        st.markdown("### 📊 SCIENTIFIC OUTPUT")
+        if st.session_state.active_file:
+            parser = PDBParser(QUIET=True)
+            structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
+            
+            with st.expander("🌐 MOLECULAR VIEWPORT", expanded=True):
+                st_molstar(st.session_state.active_file, height=500)
+
+            if run1:
+                with st.status("Analyzing Molecular Metrics..."):
+                    if lottie_scan: st_lottie(lottie_scan, height=100, key="s1")
                     ppb = PPBuilder()
                     seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(structure)])
                     ana = ProtParam.ProteinAnalysis(seq)
@@ -141,8 +187,10 @@ with tabs[0]:
             elif run3:
                 with st.status("Predicting Mutation Hotspots..."):
                     res_data = []
+                    # THE FIX IS HERE: The loop starts on its own line
                     for atom in structure.get_atoms():
                         res_data.append({"Pos": atom.get_parent().id[1], "B": atom.get_bfactor(), "Res": atom.get_parent().resname})
+                    
                     df_mut = pd.DataFrame(res_data).groupby(['Pos', 'Res']).mean().reset_index()
                     df_mut['Flexibility_Score'] = (df_mut['B'] / df_mut['B'].max()) * 100
                     
