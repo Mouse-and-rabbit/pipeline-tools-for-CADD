@@ -101,6 +101,24 @@ def generate_biomumo_logo():
     
     # Accent line
     ax.plot([4.5, 14.5], [-1.6, -1.6], color='#00d4ff', lw=1, alpha=0.3)
+    # --- RENDER LOGO ---
+plt.close('all') 
+logo_fig = generate_biomumo_logo()
+logo_buf = io.BytesIO()
+logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=True)
+logo_buf.seek(0)
+
+# Display Header
+header_col1, header_col2, header_col3 = st.columns([1, 6, 1])
+with header_col2:
+    st.image(logo_buf, use_container_width=True)
+
+# --- ENSURE THIS LINE IS PRESENT ---
+tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
+
+# Now line 106 will work
+with tabs[0]:
+    # ... rest of your code
     
     return fig# --- 4. PAGE: HOME / PIPELINE ---
 with tabs[0]:
