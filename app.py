@@ -60,7 +60,7 @@ def create_prof_report(title, methodology, formulas, df, plot_buf=None):
     doc.save(bio)
     return bio.getvalue()
 
-# --- 3. CUSTOM LOGO GENERATOR (BIOMUMO DESIGN) ---
+# --- 3. CUSTOM LOGO GENERATOR (MUMO CORE DESIGN) ---
 def generate_biomumo_logo():
     fig, ax = plt.subplots(figsize=(10, 4), facecolor='#0b0f19')
     ax.set_facecolor('#0b0f19')
@@ -68,50 +68,41 @@ def generate_biomumo_logo():
     ax.set_ylim(-3, 3)
     ax.axis('off')
 
-    # Draw the large surrounding circle from your sketch
-    outer_circle = Circle((0, 0), 2.8, color='#00d4ff', fill=False, lw=1.5, alpha=0.4)
-    ax.add_patch(outer_circle)
+    # Core Hub Circle (Represents the "Core" foundation)
+    core_circle = Circle((0, 0), 2.2, color='#00d4ff', fill=False, lw=2, alpha=0.6)
+    ax.add_patch(core_circle)
 
-    # Coordinates for the 4 fused benzene rings
-    ring_centers = [(0, 1.4), (-1.2, 0), (1.2, 0), (0, -1.4)]
+    # Modular Nodes (Representing the "Pipelines" that can be added)
+    # These replace the "03" to show the system is expandable
+    node_positions = [(0, 2.2), (1.9, 1.1), (1.9, -1.1), (0, -2.2)]
+    for i, (nx, ny) in enumerate(node_positions):
+        # Draw small nodes on the ring
+        node = Circle((nx, ny), 0.25, color='#00d4ff', fill=True, zorder=5)
+        ax.add_patch(node)
+        # Add a "glow" effect to the nodes
+        glow = Circle((nx, ny), 0.45, color='#00d4ff', alpha=0.2, zorder=4)
+        ax.add_patch(glow)
 
-    for i, (cx, cy) in enumerate(ring_centers):
-        hexagon = RegularPolygon((cx, cy), numVertices=6, radius=0.9, 
-                                 orientation=0, edgecolor='#00d4ff', 
-                                 facecolor='none', lw=2.5)
-        ax.add_patch(hexagon)
-        if i == 1 or i == 2:
-            ax.text(cx, cy, "M", color='#ffffff', fontsize=22, 
-                    fontweight='bold', ha='center', va='center', fontfamily='sans-serif')
-
-    # Sketch-style decoration (bottom right)
-    mol_x, mol_y = 1.8, -1.5
-    ax.add_patch(Circle((mol_x, mol_y), 0.15, color='#ffffff', zorder=5))
-    for dx, dy in [(0.4, 0.4), (-0.4, 0.4), (0.4, -0.4), (-0.4, -0.4)]:
-        ax.plot([mol_x, mol_x+dx], [mol_y, mol_y+dy], color='#00d4ff', lw=1)
-        ax.add_patch(Circle((mol_x+dx, mol_y+dy), 0.1, color='#00d4ff', alpha=0.6))
+    # Central "M" Monogram (Geometric and Modern)
+    # Using line segments to create a sharp, structural 'M'
+    m_x = [-1.2, -1.2, 0, 1.2, 1.2]
+    m_y = [-0.8, 0.8, 0, 0.8, -0.8]
+    ax.plot(m_x, m_y, color='#ffffff', lw=4, solid_capstyle='round', zorder=6)
 
     # Branding Text
-    ax.text(4.5, 0.4, "BIOMUMO", color='#ffffff', fontsize=52, fontweight='black', fontfamily='sans-serif')
-    ax.text(4.5, -0.6, "ENZYME OPTIMIZATION HUB", color='#00d4ff', fontsize=18, fontweight='bold')
-    ax.plot([4.5, 14.5], [-0.9, -0.9], color='#00d4ff', lw=2, alpha=0.5)
-    return fig
-
-# --- RENDER LOGO ---
-plt.close('all') 
-logo_fig = generate_biomumo_logo()
-logo_buf = io.BytesIO()
-logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=True)
-logo_buf.seek(0)
-
-# Display Header
-header_col1, header_col2, header_col3 = st.columns([1, 6, 1])
-with header_col2:
-    st.image(logo_buf, use_container_width=True)
-
-tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
-
-# --- 4. PAGE: HOME / PIPELINE ---
+    # Primary Brand: MUMO
+    ax.text(4.5, 0.5, "MUMO", color='#ffffff', fontsize=60, fontweight='black', fontfamily='sans-serif', letter_spacing=2)
+    
+    # Secondary Brand: CORE (with distinct styling)
+    ax.text(4.5, -0.6, "CORE", color='#00d4ff', fontsize=45, fontweight='light', fontfamily='sans-serif')
+    
+    # Sub-heading
+    ax.text(4.5, -1.3, "INTEGRATED PIPELINE ECOSYSTEM", color='#94a3b8', fontsize=14, fontweight='bold', letter_spacing=1)
+    
+    # Accent line
+    ax.plot([4.5, 14.5], [-1.6, -1.6], color='#00d4ff', lw=1, alpha=0.3)
+    
+    return fig# --- 4. PAGE: HOME / PIPELINE ---
 with tabs[0]:
     st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">BioMumo: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
     if 'active_file' not in st.session_state: st.session_state.active_file = None
