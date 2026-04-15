@@ -297,7 +297,8 @@ with tabs[4]:
                 "Dedicated to the development of computational tools for enhanced mucosal drug delivery systems."
                 </p>
             </div>
-        """, unsafe_allow_html=True)                    for atom in structure.get_atoms():
+        """, unsafe_allow_html=True)                    
+        for atom in structure.get_atoms():
                         res_data.append({"Pos": atom.get_parent().id[1], "B": atom.get_bfactor(), "Res": atom.get_parent().resname})
                     df_mut = pd.DataFrame(res_data).groupby(['Pos', 'Res']).mean().reset_index()
                     df_mut['Flexibility_Score'] = (df_mut['B'] / df_mut['B'].max()) * 100
