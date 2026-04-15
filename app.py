@@ -68,41 +68,34 @@ def generate_biomumo_logo():
     ax.set_ylim(-3, 3)
     ax.axis('off')
 
-    # Core Hub Circle (Represents the "Core" foundation)
+    # Core Hub Circle
     core_circle = Circle((0, 0), 2.2, color='#00d4ff', fill=False, lw=2, alpha=0.6)
     ax.add_patch(core_circle)
 
-    # Modular Nodes (Representing the "Pipelines" that can be added)
-    # These replace the "03" to show the system is expandable
+    # Modular Nodes
     node_positions = [(0, 2.2), (1.9, 1.1), (1.9, -1.1), (0, -2.2)]
     for i, (nx, ny) in enumerate(node_positions):
-        # Draw small nodes on the ring
         node = Circle((nx, ny), 0.25, color='#00d4ff', fill=True, zorder=5)
         ax.add_patch(node)
-        # Add a "glow" effect to the nodes
         glow = Circle((nx, ny), 0.45, color='#00d4ff', alpha=0.2, zorder=4)
         ax.add_patch(glow)
 
-    # Central "M" Monogram (Geometric and Modern)
-    # Using line segments to create a sharp, structural 'M'
+    # Central "M" Monogram
     m_x = [-1.2, -1.2, 0, 1.2, 1.2]
     m_y = [-0.8, 0.8, 0, 0.8, -0.8]
     ax.plot(m_x, m_y, color='#ffffff', lw=4, solid_capstyle='round', zorder=6)
 
-    # Branding Text
-    # Primary Brand: MUMO
-    ax.text(4.5, 0.5, "MUMO", color='#ffffff', fontsize=60, fontweight='black', fontfamily='sans-serif', letter_spacing=2)
-    
-    # Secondary Brand: CORE (with distinct styling)
+    # Branding Text (Fixed: Removed letter_spacing)
+    ax.text(4.5, 0.5, "MUMO", color='#ffffff', fontsize=60, fontweight='black', fontfamily='sans-serif')
     ax.text(4.5, -0.6, "CORE", color='#00d4ff', fontsize=45, fontweight='light', fontfamily='sans-serif')
-    
-    # Sub-heading
-    ax.text(4.5, -1.3, "INTEGRATED PIPELINE ECOSYSTEM", color='#94a3b8', fontsize=14, fontweight='bold', letter_spacing=1)
+    ax.text(4.5, -1.3, "INTEGRATED PIPELINE ECOSYSTEM", color='#94a3b8', fontsize=14, fontweight='bold')
     
     # Accent line
     ax.plot([4.5, 14.5], [-1.6, -1.6], color='#00d4ff', lw=1, alpha=0.3)
-   # --- 4. RENDER LOGO & TABS ---
-# Everything below this line must have ZERO indentation
+    
+    return fig
+
+# --- 4. RENDER LOGO & TABS ---
 plt.close('all') 
 logo_fig = generate_biomumo_logo()
 logo_buf = io.BytesIO()
@@ -114,20 +107,15 @@ header_col1, header_col2, header_col3 = st.columns([1, 6, 1])
 with header_col2:
     st.image(logo_buf, use_container_width=True)
 
-# Create the Navigation Tabs
+# Create Navigation
 tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
 # --- 5. PAGE: HOME / PIPELINE ---
 with tabs[0]:
-    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">Mumo Core: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
-    
-    # Initialize session state for files
-    if 'active_file' not in st.session_state: 
-        st.session_state.active_file = None
-    if 'active_name' not in st.session_state: 
-        st.session_state.active_name = "Target"
+    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">BioMumo: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
+    if 'active_file' not in st.session_state: st.session_state.active_file = None
+    if 'active_name' not in st.session_state: st.session_state.active_name = "Target"
 
-    # ... continue with the rest of your Home Page code
     col_left, col_right = st.columns([1, 2], gap="large")
     with col_left:
         st.markdown("### 🧪 RESEARCH INPUT")
@@ -182,15 +170,11 @@ with tabs[0]:
                     st.table(df_mut.nlargest(10, 'Score'))
         else: st.info("Awaiting molecular target.")
 
-# --- 5. PAGE: DESCRIPTIONS (LONG & DETAILED) ---
+# --- 6. PAGE: DESCRIPTIONS ---
 with tabs[1]:
     st.markdown('<div class="hero-text"><p class="sub-title">Theoretical Framework</p><h1 class="main-title">Methodology & Mathematical Basis</h1></div>', unsafe_allow_html=True)
     st.markdown("### 🧬 1. Physico-Chemical Sequence Analysis")
-    st.write("""
-    The analysis utilizes the **ExPASy ProtParam** algorithm to derive the fundamental properties of the protein. 
-    By treating the primary sequence as a linear chain of residues, we can predict the behavior of the enzyme in different physiological environments. 
-    This is especially critical for mucosal drug delivery, where the pH and ionic strength of the environment can drastically alter enzyme activity.
-    """)
+    st.write("The analysis utilizes the **ExPASy ProtParam** algorithm to derive the fundamental properties of the protein. By treating the primary sequence as a linear chain of residues, we can predict the behavior of the enzyme in different physiological environments. This is especially critical for mucosal drug delivery, where the pH and ionic strength of the environment can drastically alter enzyme activity.")
     c1, c2 = st.columns(2)
     with c1:
         st.info("**Isoelectric Point (pI)**")
@@ -202,35 +186,20 @@ with tabs[1]:
         st.write("Calculated by the summation of average isotopic masses of amino acids. High MW proteins often face diffusion barriers in thick mucin networks.")
     st.divider()
     st.markdown("### 🌡️ 2. Mutation Prediction via B-Factor Dynamics")
-    st.write("""
-    The **Debye-Waller Factor** (B-factor) reflects the thermal displacement of atoms. In enzyme engineering, high B-factor regions represent structural flexibility hotspots. 
-    Our pipeline identifies these flexible loops; by mutating these residues to more rigid amino acids, we can enhance the thermostability of the enzyme. 
-    For mucin glycoproteins, an optimized enzyme must remain active despite the high viscosity and potential inhibitors present in the secretion.
-    """)
+    st.write("The **Debye-Waller Factor** (B-factor) reflects the thermal displacement of atoms. In enzyme engineering, high B-factor regions represent structural flexibility hotspots. Our pipeline identifies these flexible loops; by mutating these residues to more rigid amino acids, we can enhance the thermostability of the enzyme.")
     st.latex(r"B_i = 8\pi^2 \langle u_i^2 \rangle")
     st.latex(r"Flexibility\_Score = \left( \frac{B_{residue}}{B_{maximum}} \right) \times 100")
 
-# --- 6. PAGE: ABOUT US (DETAILED) ---
+# --- 7. PAGE: ABOUT US ---
 with tabs[2]:
     st.markdown('<div class="hero-text"><p class="sub-title">Institutional Profile</p><h1 class="main-title">Advancing Computational Pharmaceutics</h1></div>', unsafe_allow_html=True)
     st.markdown("### 🏛️ Vinayaka Mission's College of Pharmacy")
-    st.write("""
-    A constituent college of Vinayaka Mission's Research Foundation, our institution is at the forefront of pharmaceutical innovation. 
-    This platform was developed as part of advanced research into **In-Silico Drug Discovery** and **Computational Proteomics**.
-    """)
-    st.success("""
-    **Mission Objective:** To bridge the gap between traditional Wet-Lab pharmacy and high-performance computational modeling. 
-    We focus on training pharmacists to utilize Python-based bioinformatics for solving complex biological challenges.
-    """)
+    st.write("A constituent college of Vinayaka Mission's Research Foundation, our institution is at the forefront of pharmaceutical innovation. This platform was developed as part of advanced research into **In-Silico Drug Discovery** and **Computational Proteomics**.")
+    st.success("**Mission Objective:** To bridge the gap between traditional Wet-Lab pharmacy and high-performance computational modeling. We focus on training pharmacists to utilize Python-based bioinformatics for solving complex biological challenges.")
     st.markdown("### 🧪 Research Initiative & AI Pipeline")
-    st.info("""
-    **Project Goal:** The core of this initiative lies in the construction of an end-to-end **computational pipeline** designed to bridge the gap between raw data and actionable insights through **Machine Learning (ML)** and **Deep Learning (DL)**. 
-    By implementing advanced **Neural Network architectures**, the system automates high-dimensional feature extraction and pattern recognition. 
-    The pipeline is engineered to handle complex data preprocessing, model training via **gradient-based optimization**, and rigorous validation using **predictive analytics**. 
-    This integrated AI ecosystem allows for the rapid iteration of hypotheses, utilizing **Transformer-based models** to simulate scenarios and predict outcomes with high precision.
-    """)
+    st.info("**Project Goal:** The core of this initiative lies in the construction of an end-to-end **computational pipeline** designed to bridge the gap between raw data and actionable insights through **Machine Learning (ML)** and **Deep Learning (DL)**. By implementing advanced **Neural Network architectures**, the system automates high-dimensional feature extraction and pattern recognition.")
 
-# --- 7. PAGE: REFERENCES (DETAILED) ---
+# --- 8. PAGE: REFERENCES ---
 with tabs[3]:
     st.markdown('<div class="hero-text"><p class="sub-title">Scholarly Foundation</p><h1 class="main-title">Scientific References</h1></div>', unsafe_allow_html=True)
     st.write("""
@@ -241,7 +210,7 @@ with tabs[3]:
     5. **Khan A, et al.** (2026). *Protein structure prediction powered by artificial intelligence.* Front Mol Biosci.
     """)
 
-# --- 8. PAGE: CONTACT (DETAILED) ---
+# --- 9. PAGE: CONTACT ---
 with tabs[4]:
     st.markdown('<div class="hero-text"><p class="sub-title">Collaboration</p><h1 class="main-title">Contact the Research Team</h1></div>', unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1, 2, 1])
