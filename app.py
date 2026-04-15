@@ -101,7 +101,8 @@ def generate_biomumo_logo():
     
     # Accent line
     ax.plot([4.5, 14.5], [-1.6, -1.6], color='#00d4ff', lw=1, alpha=0.3)
-    # --- RENDER LOGO ---
+   # --- 4. RENDER LOGO & TABS ---
+# Everything below this line must have ZERO indentation
 plt.close('all') 
 logo_fig = generate_biomumo_logo()
 logo_buf = io.BytesIO()
@@ -113,19 +114,20 @@ header_col1, header_col2, header_col3 = st.columns([1, 6, 1])
 with header_col2:
     st.image(logo_buf, use_container_width=True)
 
-# --- ENSURE THIS LINE IS PRESENT ---
+# Create the Navigation Tabs
 tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
-# Now line 106 will work
+# --- 5. PAGE: HOME / PIPELINE ---
 with tabs[0]:
-    # ... rest of your code
-    return fig
-# --- 4. PAGE: HOME / PIPELINE ---
-with tabs[0]:
-    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">BioMumo: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
-    if 'active_file' not in st.session_state: st.session_state.active_file = None
-    if 'active_name' not in st.session_state: st.session_state.active_name = "Target"
+    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">Mumo Core: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
+    
+    # Initialize session state for files
+    if 'active_file' not in st.session_state: 
+        st.session_state.active_file = None
+    if 'active_name' not in st.session_state: 
+        st.session_state.active_name = "Target"
 
+    # ... continue with the rest of your Home Page code
     col_left, col_right = st.columns([1, 2], gap="large")
     with col_left:
         st.markdown("### 🧪 RESEARCH INPUT")
