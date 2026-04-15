@@ -120,7 +120,8 @@ tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "�
 with tabs[0]:
     # ... rest of your code
     
-    return fig# --- 4. PAGE: HOME / PIPELINE ---
+    return fig
+# --- 4. PAGE: HOME / PIPELINE ---
 with tabs[0]:
     st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">BioMumo: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
     if 'active_file' not in st.session_state: st.session_state.active_file = None
