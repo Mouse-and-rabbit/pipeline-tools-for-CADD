@@ -213,10 +213,7 @@ elif page == "👥 ABOUT US":
 
     st.markdown("### 🧪 Research Initiative: Mucin Optimization")
     st.info("""
-    **Project Goal:** The primary focus of this study is the enzymatic degradation of **Mucin Glycoproteins**. 
-    Mucus hypersecretion is a hallmark of various respiratory pathologies. By utilizing this pipeline, 
-    we aim to optimize enzymes (such as proteases) to effectively reduce mucus viscosity, thereby enhancing 
-    drug penetration and mucosal clearance.
+    **Project Goal:** ## **The AI & Deep Learning Research Framework The core of this initiative lies in the construction of an end-to-end **computational pipeline** designed to bridge the gap between raw data and actionable insights through **Machine Learning (ML)** and **Deep Learning (DL)**. By implementing advanced **Neural Network architectures**, the system automates high-dimensional feature extraction and pattern recognition, moving beyond traditional statistical limits. The pipeline is engineered to handle complex data preprocessing, model training via **gradient-based optimization**, and rigorous validation using **predictive analytics**. This integrated AI ecosystem allows for the rapid iteration of hypotheses, utilizing **Transformer-based models** and **Generative AI** to simulate scenarios and predict outcomes with high precision, ultimately transforming data-driven discovery into a scalable, automated workflow..
     """)
 
 # --- 7. PAGE: REFERENCES ---
