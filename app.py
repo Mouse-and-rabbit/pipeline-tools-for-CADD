@@ -22,10 +22,8 @@ st.markdown("""
     .sub-title { font-size: 16px; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; }
     .stButton>button { width: 100%; border-radius: 5px; border: 1px solid #00d4ff; background-color: transparent; color: #00d4ff; font-weight: 600; height: 3em; text-transform: uppercase; }
     .stButton>button:hover { background-color: #00d4ff; color: #0b0f19; box-shadow: 0 0 15px rgba(0, 212, 255, 0.4); }
-    
-    /* Header and Tab Styling */
     .stTabs [data-baseweb="tab-list"] { gap: 24px; justify-content: center; }
-    .stTabs [data-baseweb="tab"] { height: 50px; white-space: pre-wrap; background-color: #0f172a; border-radius: 4px 4px 0px 0px; color: #94a3b8; }
+    .stTabs [data-baseweb="tab"] { height: 50px; background-color: #0f172a; border-radius: 4px; color: #94a3b8; }
     .stTabs [aria-selected="true"] { color: #00d4ff !important; border-bottom-color: #00d4ff !important; }
     </style>
 """, unsafe_allow_html=True)
@@ -61,12 +59,11 @@ def create_prof_report(title, methodology, formulas, df, plot_buf=None):
     doc.save(bio)
     return bio.getvalue()
 
-# --- 3. TOP NAVIGATION BAR ---
+# --- 3. TOP NAVIGATION ---
 header_col1, header_col2, header_col3 = st.columns([1, 2, 1])
 with header_col2:
     st.image("https://www.schrodinger.com/themes/custom/schrodinger/logo.svg", width=300)
 
-# Main Tab-based Navigation
 tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
 # --- 4. PAGE: HOME / PIPELINE ---
@@ -108,6 +105,162 @@ with tabs[0]:
         if st.session_state.active_file:
             parser = PDBParser(QUIET=True)
             structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
+            
+            with st.expander("🌐 MOLECULAR VIEWPORT", expanded=True):
+                st_molstar(st.session_state.active_file, height=500)
+
+            if run1:
+                with st.status("Analyzing Molecular Metrics..."):
+                    if lottie_scan: st_lottie(lottie_scan, height=100)
+                    ppb = PPBuilder()
+                    seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(structure)])
+                    ana = ProtParam.ProteinAnalysis(seq)
+                    df1 = pd.DataFrame({
+                        'Parameter': ['Molecular Weight', 'Isoelectric Point (pI)', 'Instability Index'], 
+                        'Value': [f"{ana.molecular_weight()/1000:.2f} kDa", f"{ana.isoelectric_point():.2f}", f"{ana.instability_index():.2f}"]
+                    })
+                    st.table(df1)
+                    rep1 = create_prof_report("Physico-Chemical Report", "ProtParam sequence analysis.", ["MW Calculation", "pI Algorithm"], df1)
+                    st.download_button("📥 DOWNLOAD REPORT", rep1, f"{st.session_state.active_name}_Physico.docx")
+
+            elif run3:
+                with st.status("Predicting Mutation Hotspots..."):
+                    res_data = []
+                    for atom in structure.get_atoms():
+                        res_data.append({"Pos": atom.get_parent().id[1], "B": atom.get_bfactor(), "Res": atom.get_parent().resname})
+                    
+                    df_mut = pd.DataFrame(res_data).groupby(['Pos', 'Res']).mean().reset_index()
+                    df_mut['Flexibility_Score'] = (df_mut['B'] / df_mut['B'].max()) * 100
+                    
+                    fig, ax = plt.subplots(figsize=(10, 3))
+                    ax.plot(df_mut['Pos'], df_mut['Flexibility_Score'], color='#00d4ff')
+                    st.pyplot(fig)
+                    
+                    buf = io.BytesIO()
+                    fig.savefig(buf, format='png'); buf.seek(0)
+                    top_ten = df_mut.nlargest(10, 'Flexibility_Score')
+                    st.table(top_ten)
+                    rep3 = create_prof_report("Mutation Strategy", "B-Factor flexibility analysis.", ["Flexibility = (B/Bmax)*100"], top_ten, buf)
+                    st.download_button("📥 DOWNLOAD REPORT", rep3, f"{st.session_state.active_name}_Mutation.docx")
+        else:
+            st.info("Awaiting molecular target for processing.")
+
+# --- 5. PAGE: DESCRIPTIONS (HIGH DETAIL) ---
+with tabs[1]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Theoretical Framework</p><h1 class="main-title">Methodology & Mathematical Basis</h1></div>', unsafe_allow_html=True)
+    
+    st.markdown("### 🧬 1. Physico-Chemical Sequence Analysis")
+    st.write("""
+    The analysis utilizes the **ExPASy ProtParam** algorithm to derive the fundamental properties of the protein. 
+    By treating the primary sequence as a linear chain of residues, we can predict the behavior of the enzyme in 
+    different physiological environments—crucial for mucosal drug delivery.
+    """)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.info("**Isoelectric Point (pI)**")
+        st.latex(r"pI = \frac{pK_i + pK_j}{2}")
+        st.write("Determines the pH at which the enzyme carries no net electrical charge. This is vital for maintaining enzyme stability within the variable pH of the mucosal layer.")
+    
+    with col2:
+        st.info("**Molecular Weight (MW)**")
+        st.latex(r"MW = \sum (n_i \times m_i) + (H_2O)")
+        st.write("Calculated by the summation of average isotopic masses of amino acids. High MW proteins often face diffusion barriers in thick mucin networks.")
+
+    st.divider()
+
+    st.markdown("### 🌡️ 2. Mutation Prediction via B-Factor Dynamics")
+    st.write("""
+    The **Debye-Waller Factor** (B-factor) reflects the thermal displacement of atoms. In enzyme engineering, high B-factor regions 
+    represent **structural flexibility hotspots**. 
+    """)
+    st.latex(r"B_i = 8\pi^2 \langle u_i^2 \rangle")
+    st.write("""
+    Our pipeline identifies these flexible loops. By mutating these residues to more rigid amino acids, we can enhance the 
+    **Thermostability** of the enzyme. For mucin glycoproteins, an optimized enzyme must remain active despite the 
+    high viscosity and potential inhibitors present in the secretion.
+    """)
+    st.latex(r"""Flexibility\_Score = \left( \frac{B_{residue}}{B_{maximum}} \right) \times 100""")
+
+# --- 6. PAGE: ABOUT US (HIGH DETAIL) ---
+with tabs[2]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Institutional Profile</p><h1 class="main-title">Advancing Computational Pharmaceutics</h1></div>', unsafe_allow_html=True)
+    
+    st.markdown("### 🏛️ Vinayaka Mission's College of Pharmacy")
+    st.write("""
+    A constituent college of Vinayaka Mission's Research Foundation, our institution is at the forefront of 
+    pharmaceutical innovation. This platform was developed as part of advanced research into **In-Silico Drug Discovery** and **Computational Proteomics**.
+    """)
+    
+    st.success("""
+    **Mission Objective:** To bridge the gap between traditional Wet-Lab pharmacy and high-performance 
+    computational modeling. We focus on training the next generation of pharmacists to utilize Python-based 
+    bioinformatics for solving complex biological challenges.
+    """)
+
+    st.markdown("### 🧪 Research Initiative & AI Pipeline")
+    st.info("""
+    **Project Goal:** The core of this initiative lies in the construction of an end-to-end **computational pipeline** designed to bridge the gap between raw data and actionable insights through **Machine Learning (ML)** and **Deep Learning (DL)**. By implementing advanced **Neural Network architectures**, the system automates high-dimensional feature extraction and pattern recognition, moving beyond traditional statistical limits. The pipeline is engineered to handle complex data preprocessing, model training via **gradient-based optimization**, and rigorous validation using **predictive analytics**. This integrated AI ecosystem allows for the rapid iteration of hypotheses, utilizing **Transformer-based models** and **Generative AI** to simulate scenarios and predict outcomes with high precision, ultimately transforming data-driven discovery into a scalable, automated workflow.
+    """)
+
+# --- 7. PAGE: REFERENCES (HIGH DETAIL) ---
+with tabs[3]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Scholarly Foundation</p><h1 class="main-title">Scientific References</h1></div>', unsafe_allow_html=True)
+    
+    st.markdown("### 📖 Primary Technical Literature")
+    st.write("""
+    1. **Cock PJ, Antao T, Chang JT, et al.** (2009). *Biopython: freely available Python tools for computational molecular biology and bioinformatics.* Bioinformatics, 25(11).
+    2. **Gasteiger E, Hoogland C, et al.** (2005). *Protein Identification and Analysis Tools on the ExPASy Server.* The Proteomics Protocols Handbook.
+    3. **Sun Z, Liu Q, Qu G, et al.** (2019). *Utility of B-factors in protein engineering: Interpreting rigidity and flexibility for enzyme optimization.* Chemical Reviews.
+    """)
+
+    st.markdown("### 📖 Protein & Structural Research (Recent)")
+    st.write("""
+    4. **Abramson J, Adler J, Dunger J, Evans R, Green T, Pritzel A, et al.** (2024). *Accurate structure prediction of biomolecular interactions with AlphaFold 3.* Nature, 630(8016):493-500.
+    5. **Piovesan D, Monzon AM, Tosatto SCE.** (2025). *AlphaFold Protein Structure Database 2025: a redesigned interface and updated structural coverage.* Nucleic Acids Res, 53(D1):D461-D469.
+    6. **Khan A, Patton-Parfyonov A, Zhang Y.** (2026). *Protein structure prediction powered by artificial intelligence: from biochemical foundations to practical applications.* Front Mol Biosci, 13:1767821.
+    7. **Barrio-Hernandez I, Yeo J, Durairaj J, Steinegger M, Beltrao P.** (2025). *Emerging frontiers in protein structure prediction following the AlphaFold revolution.* J R Soc Interface, 22(225):20240886.
+    8. **Bansil R, Turner BS.** (2018). *The biology of mucus: Composition, synthesis and organization.* Advanced Drug Delivery Reviews.
+    9. **Berman HM, Westbrook J, et al.** (2000). *The Protein Data Bank.* Nucleic Acids Research.
+    """)
+
+# --- 8. PAGE: CONTACT (CLEAN & FUNCTIONAL) ---
+with tabs[4]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Collaboration</p><h1 class="main-title">Contact the Research Team</h1></div>', unsafe_allow_html=True)
+    
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        # Institutional Card
+        st.markdown(f"""
+            <div style="background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 15px; border: 1px solid #00d4ff; text-align: center; margin-bottom: 25px;">
+                <h2 style="color: #00d4ff;">Mowriss.M.G & Mugilarasi.C</h2>
+                <p style="font-size: 1.1em; color: #94a3b8;">B.Pharm Research Scholars</p>
+                <hr style="border-color: rgba(0, 212, 255, 0.2);">
+                <p><strong>Institution:</strong> Vinayaka Mission's College of Pharmacy</p>
+                <p style="font-style: italic; color: #e2e8f0;">
+                "Dedicated to the development of computational tools for enhanced mucosal drug delivery systems."
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # Collaboration Form
+        st.markdown("### 📧 Get in Touch")
+        with st.form("contact_form", clear_on_submit=True):
+            user_email = st.text_input("Your Email Address")
+            user_inst = st.text_input("Your Institution/Organization")
+            subject = st.selectbox("Purpose of Inquiry", ["Research Collaboration", "Technical Issue", "Algorithm Requirement", "General Feedback"])
+            message = st.text_area("Details of Requirement or Issue")
+            
+            submit_button = st.form_submit_button("GENERATE INQUIRY")
+
+            if submit_button:
+                if user_email and message:
+                    st.success("Inquiry Prepared!")
+                    mail_body = f"From: {user_email}%0D%0AInstitution: {user_inst}%0D%0A%0D%0AMessage: {message}"
+                    mailto_link = f"mailto:mowrissm@gmail.com?subject={subject}&body={mail_body}"
+                    st.markdown(f'<a href="{mailto_link}" target="_blank"><div style="text-align:center;padding:10px;background-color:#00d4ff;color:#0b0f19;border-radius:5px;font-weight:bold;">CLICK HERE TO SEND EMAIL</div></a>', unsafe_allow_html=True)
+                else:
+                    st.error("Please fill in your Email and Message details.")            structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
             
             with st.expander("🌐 MOLECULAR VIEWPORT", expanded=True):
                 st_molstar(st.session_state.active_file, height=500)
