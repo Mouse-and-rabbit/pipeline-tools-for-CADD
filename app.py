@@ -400,20 +400,48 @@ elif page == "📚 REFERENCES":
     """)
 
 # --- 8. PAGE: CONTACT ---
-elif page == "📧 CONTACT":
+with tabs[4]:
     st.markdown('<div class="hero-text"><p class="sub-title">Collaboration</p><h1 class="main-title">Contact the Research Team</h1></div>', unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns([1, 2, 1])
+    
     with c2:
+        # Institutional Card
         st.markdown(f"""
-            <div style="background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 15px; border: 1px solid #00d4ff; text-align: center;">
-                <h2 style="color: #00d4ff;">Mowriss.M.G & Mugilarasi.C </h2>
+            <div style="background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 15px; border: 1px solid #00d4ff; text-align: center; margin-bottom: 25px;">
+                <h2 style="color: #00d4ff;">Mowriss.M.G & Mugilarasi.C</h2>
                 <p style="font-size: 1.1em; color: #94a3b8;">B.Pharm Research Scholars</p>
                 <hr style="border-color: rgba(0, 212, 255, 0.2);">
-                <p><strong>Email:</strong> mowrissm@gmail.com</p>
                 <p><strong>Institution:</strong> Vinayaka Mission's College of Pharmacy</p>
-                <p style="font-style: italic; margin-top: 15px; color: #e2e8f0;">
+                <p style="font-style: italic; color: #e2e8f0;">
                 "Dedicated to the development of computational tools for enhanced mucosal drug delivery systems."
                 </p>
             </div>
         """, unsafe_allow_html=True)
+
+        # Collaboration Form
+        st.markdown("### 📧 Get in Touch")
+        with st.form("contact_form", clear_on_submit=True):
+            user_email = st.text_input("Your Email Address")
+            user_inst = st.text_input("Your Institution/Organization")
+            subject = st.selectbox("Purpose of Inquiry", ["Research Collaboration", "Technical Issue", "Algorithm Requirement", "General Feedback"])
+            message = st.text_area("Details of Requirement or Issue")
+            
+            submit_button = st.form_submit_button("GENERATE INQUIRY")
+
+            if submit_button:
+                if user_email and message:
+                    st.success("Inquiry Prepared!")
+                    # This creates a mailto link that opens the user's default email app
+                    mail_body = f"From: {user_email}%0D%0AInstitution: {user_inst}%0D%0A%0D%0AMessage: {message}"
+                    mailto_link = f"mailto:mowrissm@gmail.com?subject={subject}&body={mail_body}"
+                    
+                    st.markdown(f"""
+                        <a href="{mailto_link}" target="_blank">
+                            <div style="text-align: center; padding: 10px; background-color: #00d4ff; color: #0b0f19; border-radius: 5px; font-weight: bold; text-decoration: none;">
+                                CLICK HERE TO SEND EMAIL
+                            </div>
+                        </a>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.error("Please fill in your Email and Message details.")
