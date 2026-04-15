@@ -10,10 +10,10 @@ from Bio.SeqUtils import ProtParam
 from docx import Document
 from docx.shared import Inches, RGBColor
 from streamlit_molstar import st_molstar
-from matplotlib.patches import Circle
+from matplotlib.patches import RegularPolygon, Circle
 
 # --- 1. SCHRÖDINGER-INSPIRED CONFIG ---
-st.set_page_config(page_title="Enzyme Optimization Hub | Advanced CADD", layout="wide", page_icon="🧬")
+st.set_page_config(page_title="BioMumo | Enzyme Optimization Hub", layout="wide", page_icon="🧬")
 
 st.markdown("""
     <style>
@@ -60,67 +60,60 @@ def create_prof_report(title, methodology, formulas, df, plot_buf=None):
     doc.save(bio)
     return bio.getvalue()
 
-# --- 3. CUSTOM LOGO GENERATOR & HEADER ---
-def generate_custom_logo():
-    # Wider canvas to prevent text clipping
-    fig, ax = plt.subplots(figsize=(10, 3), facecolor='#0b0f19')
+# --- 3. CUSTOM LOGO GENERATOR (BIOMUMO DESIGN) ---
+def generate_biomumo_logo():
+    fig, ax = plt.subplots(figsize=(10, 4), facecolor='#0b0f19')
     ax.set_facecolor('#0b0f19')
-    ax.set_xlim(-2, 16) # Increased x-limit for the text
-    ax.set_ylim(-2, 2)
+    ax.set_xlim(-3, 16)
+    ax.set_ylim(-3, 3)
     ax.axis('off')
 
-    # Abstract "Active Site" Node Structure
-    nodes_x = [0, 1.2, 2.8, 1.5, 0.2, -1]
-    nodes_y = [0.8, 1.2, 0, -1.2, -0.5, 0.2]
-    
-    # Draw connections
-    for i in range(len(nodes_x)):
-        for j in range(i + 1, len(nodes_x)):
-            dist = np.sqrt((nodes_x[i]-nodes_x[j])**2 + (nodes_y[i]-nodes_y[j])**2)
-            if dist < 2.5:
-                ax.plot([nodes_x[i], nodes_x[j]], [nodes_y[i], nodes_y[j]], 
-                        color='#00d4ff', lw=1.5, alpha=0.3, zorder=1)
+    # Draw the large surrounding circle from your sketch
+    outer_circle = Circle((0, 0), 2.8, color='#00d4ff', fill=False, lw=1.5, alpha=0.4)
+    ax.add_patch(outer_circle)
 
-    # Draw Nodes with Glow
-    for i in range(len(nodes_x)):
-        ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.12, color='#ffffff', zorder=5))
-        ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.25, color='#00d4ff', alpha=0.4, zorder=4))
-        if i == 2: # Highlight the "Mutation" center
-            ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.6, color='#00d4ff', alpha=0.15, zorder=3))
+    # Coordinates for the 4 fused benzene rings
+    ring_centers = [(0, 1.4), (-1.2, 0), (1.2, 0), (0, -1.4)]
+
+    for i, (cx, cy) in enumerate(ring_centers):
+        hexagon = RegularPolygon((cx, cy), numVertices=6, radius=0.9, 
+                                 orientation=0, edgecolor='#00d4ff', 
+                                 facecolor='none', lw=2.5)
+        ax.add_patch(hexagon)
+        if i == 1 or i == 2:
+            ax.text(cx, cy, "M", color='#ffffff', fontsize=22, 
+                    fontweight='bold', ha='center', va='center', fontfamily='sans-serif')
+
+    # Sketch-style decoration (bottom right)
+    mol_x, mol_y = 1.8, -1.5
+    ax.add_patch(Circle((mol_x, mol_y), 0.15, color='#ffffff', zorder=5))
+    for dx, dy in [(0.4, 0.4), (-0.4, 0.4), (0.4, -0.4), (-0.4, -0.4)]:
+        ax.plot([mol_x, mol_x+dx], [mol_y, mol_y+dy], color='#00d4ff', lw=1)
+        ax.add_patch(Circle((mol_x+dx, mol_y+dy), 0.1, color='#00d4ff', alpha=0.6))
 
     # Branding Text
-    ax.text(4.2, 0.3, "ENZYME", color='#ffffff', fontsize=38, fontweight='black', fontfamily='sans-serif')
-    ax.text(4.2, -0.7, "OPTIMIZATION HUB", color='#00d4ff', fontsize=22, fontweight='bold', fontfamily='sans-serif')
-    
-    # Decorative line
-    ax.plot([4.2, 14.5], [-0.9, -0.9], color='#00d4ff', lw=2, alpha=0.5)
+    ax.text(4.5, 0.4, "BIOMUMO", color='#ffffff', fontsize=52, fontweight='black', fontfamily='sans-serif')
+    ax.text(4.5, -0.6, "ENZYME OPTIMIZATION HUB", color='#00d4ff', fontsize=18, fontweight='bold')
+    ax.plot([4.5, 14.5], [-0.9, -0.9], color='#00d4ff', lw=2, alpha=0.5)
     return fig
 
-# --- RENDER AND DISPLAY LOGO ---
-# 1. Clear previous plots to avoid memory overlap
+# --- RENDER LOGO ---
 plt.close('all') 
-
-# 2. Generate the figure
-logo_fig = generate_custom_logo()
-
-# 3. Save to a fresh buffer
+logo_fig = generate_biomumo_logo()
 logo_buf = io.BytesIO()
-logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=False)
+logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=True)
 logo_buf.seek(0)
 
-# 4. Display in Streamlit (Centered)
-header_col1, header_col2, header_col3 = st.columns([1, 5, 1])
+# Display Header
+header_col1, header_col2, header_col3 = st.columns([1, 6, 1])
 with header_col2:
     st.image(logo_buf, use_container_width=True)
-
-# 5. Cleanup
-plt.close(logo_fig)
 
 tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
 # --- 4. PAGE: HOME / PIPELINE ---
 with tabs[0]:
-    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">BioMumo: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
     if 'active_file' not in st.session_state: st.session_state.active_file = None
     if 'active_name' not in st.session_state: st.session_state.active_name = "Target"
 
