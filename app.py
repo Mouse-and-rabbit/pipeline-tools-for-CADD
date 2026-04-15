@@ -10,7 +10,8 @@ from Bio.SeqUtils import ProtParam
 from docx import Document
 from docx.shared import Inches, RGBColor
 from streamlit_molstar import st_molstar
-from matplotlib.patches import RegularPolygon, Circle
+from matplotlib.patches import RegularPolygon, Circle, PathPatch
+import matplotlib.path as mpath
 
 # --- 1. SCHRÖDINGER-INSPIRED CONFIG ---
 st.set_page_config(page_title="BioMumo | Enzyme Optimization Hub", layout="wide", page_icon="🧬")
@@ -60,38 +61,50 @@ def create_prof_report(title, methodology, formulas, df, plot_buf=None):
     doc.save(bio)
     return bio.getvalue()
 
-# --- 3. CUSTOM LOGO GENERATOR (MUMO CORE DESIGN) ---
+# --- 3. CUSTOM LOGO GENERATOR (INTEGRATED SKETCH DESIGN) ---
 def generate_biomumo_logo():
-    fig, ax = plt.subplots(figsize=(10, 4), facecolor='#0b0f19')
+    fig, ax = plt.subplots(figsize=(12, 4), facecolor='#0b0f19')
     ax.set_facecolor('#0b0f19')
-    ax.set_xlim(-3, 16)
-    ax.set_ylim(-3, 3)
+    ax.set_xlim(-4, 18)
+    ax.set_ylim(-4, 4)
     ax.axis('off')
 
-    # Core Hub Circle
-    core_circle = Circle((0, 0), 2.2, color='#00d4ff', fill=False, lw=2, alpha=0.6)
-    ax.add_patch(core_circle)
+    # 1. Background Halo (Structural Depth)
+    circle_bg = Circle((0, 0), 3.2, color='#00d4ff', fill=False, lw=1, alpha=0.15, ls='--')
+    ax.add_patch(circle_bg)
 
-    # Modular Nodes
-    node_positions = [(0, 2.2), (1.9, 1.1), (1.9, -1.1), (0, -2.2)]
-    for i, (nx, ny) in enumerate(node_positions):
-        node = Circle((nx, ny), 0.25, color='#00d4ff', fill=True, zorder=5)
-        ax.add_patch(node)
-        glow = Circle((nx, ny), 0.45, color='#00d4ff', alpha=0.2, zorder=4)
-        ax.add_patch(glow)
+    # 2. Sigma (Σ) Symbol from sketch
+    # Drawn as a stylized, sharp-edged path
+    sigma_path = [
+        (1.8, 2.5),   # Top right
+        (-1.5, 2.5),  # Top left
+        (0.5, 0),     # Middle point
+        (-1.5, -2.5), # Bottom left
+        (1.8, -2.5)   # Bottom right
+    ]
+    codes = [mpath.Path.MOVETO, mpath.Path.LINETO, mpath.Path.LINETO, mpath.Path.LINETO, mpath.Path.LINETO]
+    path = mpath.Path(sigma_path, codes)
+    patch = PathPatch(path, facecolor='none', edgecolor='#ffffff', lw=6, capstyle='round', joinstyle='round', zorder=5)
+    ax.add_patch(patch)
 
-    # Central "M" Monogram
-    m_x = [-1.2, -1.2, 0, 1.2, 1.2]
-    m_y = [-0.8, 0.8, 0, 0.8, -0.8]
-    ax.plot(m_x, m_y, color='#ffffff', lw=4, solid_capstyle='round', zorder=6)
-
-    # Branding Text (Fixed: Removed letter_spacing)
-    ax.text(4.5, 0.5, "MUMO", color='#ffffff', fontsize=60, fontweight='black', fontfamily='sans-serif')
-    ax.text(4.5, -0.6, "CORE", color='#00d4ff', fontsize=45, fontweight='light', fontfamily='sans-serif')
-    ax.text(4.5, -1.3, "INTEGRATED PIPELINE ECOSYSTEM", color='#94a3b8', fontsize=14, fontweight='bold')
+    # 3. "03" Elements from sketch (Positioned above Sigma)
+    # The '0' - stylized as a ring
+    ring_0 = Circle((-0.8, 3.2), 0.45, color='#00d4ff', fill=False, lw=2.5, alpha=0.9)
+    ax.add_patch(ring_0)
     
-    # Accent line
-    ax.plot([4.5, 14.5], [-1.6, -1.6], color='#00d4ff', lw=1, alpha=0.3)
+    # The '3' - stylized curve
+    t = np.linspace(0, 1.5 * np.pi, 100)
+    x3 = 0.8 + 0.4 * np.cos(t)
+    y3 = 3.2 + 0.4 * np.sin(t)
+    ax.plot(x3, y3, color='#00d4ff', lw=2.5, alpha=0.9)
+
+    # 4. Branding Text
+    ax.text(5, 0.7, "MUMO", color='#ffffff', fontsize=65, fontweight='black', fontfamily='sans-serif')
+    ax.text(5, -0.6, "CORE", color='#00d4ff', fontsize=48, fontweight='light', fontfamily='sans-serif')
+    ax.text(5, -1.5, "INTEGRATED PIPELINE ECOSYSTEM", color='#94a3b8', fontsize=15, fontweight='bold')
+    
+    # 5. Accent decorative line
+    ax.plot([5, 16], [-1.9, -1.9], color='#00d4ff', lw=1.5, alpha=0.4)
     
     return fig
 
@@ -102,12 +115,10 @@ logo_buf = io.BytesIO()
 logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=True)
 logo_buf.seek(0)
 
-# Display Header
 header_col1, header_col2, header_col3 = st.columns([1, 6, 1])
 with header_col2:
     st.image(logo_buf, use_container_width=True)
 
-# Create Navigation
 tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
 # --- 5. PAGE: HOME / PIPELINE ---
