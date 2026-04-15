@@ -119,7 +119,6 @@ tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "�
 # Now line 106 will work
 with tabs[0]:
     # ... rest of your code
-    
     return fig
 # --- 4. PAGE: HOME / PIPELINE ---
 with tabs[0]:
