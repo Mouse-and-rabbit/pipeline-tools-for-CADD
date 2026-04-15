@@ -60,51 +60,61 @@ def create_prof_report(title, methodology, formulas, df, plot_buf=None):
     doc.save(bio)
     return bio.getvalue()
 
-# --- 3. CUSTOM LOGO GENERATOR ---
+# --- 3. CUSTOM LOGO GENERATOR & HEADER ---
 def generate_custom_logo():
-    # Create a wider, cleaner canvas
-    fig, ax = plt.subplots(figsize=(8, 2.5), facecolor='#0b0f19')
+    # Wider canvas to prevent text clipping
+    fig, ax = plt.subplots(figsize=(10, 3), facecolor='#0b0f19')
     ax.set_facecolor('#0b0f19')
-    ax.set_xlim(-2, 14)
+    ax.set_xlim(-2, 16) # Increased x-limit for the text
     ax.set_ylim(-2, 2)
     ax.axis('off')
 
-    # Abstract "Active Site" Node Structure (More organic look)
+    # Abstract "Active Site" Node Structure
     nodes_x = [0, 1.2, 2.8, 1.5, 0.2, -1]
     nodes_y = [0.8, 1.2, 0, -1.2, -0.5, 0.2]
     
-    # Draw polished connections
+    # Draw connections
     for i in range(len(nodes_x)):
         for j in range(i + 1, len(nodes_x)):
-            # Only connect nearby nodes for a "web" look
             dist = np.sqrt((nodes_x[i]-nodes_x[j])**2 + (nodes_y[i]-nodes_y[j])**2)
             if dist < 2.5:
                 ax.plot([nodes_x[i], nodes_x[j]], [nodes_y[i], nodes_y[j]], 
                         color='#00d4ff', lw=1.5, alpha=0.3, zorder=1)
 
-    # Draw "Glow" Nodes
+    # Draw Nodes with Glow
     for i in range(len(nodes_x)):
-        # Inner Core
         ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.12, color='#ffffff', zorder=5))
-        # Outer Glow
         ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.25, color='#00d4ff', alpha=0.4, zorder=4))
-        # Large ambient glow for the "Active Site" (center node)
-        if i == 2:
+        if i == 2: # Highlight the "Mutation" center
             ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.6, color='#00d4ff', alpha=0.15, zorder=3))
 
-    # Professional Branding Text
-    # "ENZYME" in bold white
-    ax.text(4.2, 0.3, "ENZYME", color='#ffffff', fontsize=32, fontweight='black', 
-            fontfamily='sans-serif', letterspacing=1)
+    # Branding Text
+    ax.text(4.2, 0.3, "ENZYME", color='#ffffff', fontsize=38, fontweight='black', fontfamily='sans-serif')
+    ax.text(4.2, -0.7, "OPTIMIZATION HUB", color='#00d4ff', fontsize=22, fontweight='bold', fontfamily='sans-serif')
     
-    # "OPTIMIZATION HUB" in sleek Cyan
-    ax.text(4.2, -0.6, "OPTIMIZATION HUB", color='#00d4ff', fontsize=20, fontweight='bold', 
-            fontfamily='sans-serif', alpha=0.9)
-    
-    # Minimalist decorative line
-    ax.plot([4.2, 13], [-0.8, -0.8], color='#00d4ff', lw=2, alpha=0.5)
-
+    # Decorative line
+    ax.plot([4.2, 14.5], [-0.9, -0.9], color='#00d4ff', lw=2, alpha=0.5)
     return fig
+
+# --- RENDER AND DISPLAY LOGO ---
+# 1. Clear previous plots to avoid memory overlap
+plt.close('all') 
+
+# 2. Generate the figure
+logo_fig = generate_custom_logo()
+
+# 3. Save to a fresh buffer
+logo_buf = io.BytesIO()
+logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=False)
+logo_buf.seek(0)
+
+# 4. Display in Streamlit (Centered)
+header_col1, header_col2, header_col3 = st.columns([1, 5, 1])
+with header_col2:
+    st.image(logo_buf, use_container_width=True)
+
+# 5. Cleanup
+plt.close(logo_fig)
 
 tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
