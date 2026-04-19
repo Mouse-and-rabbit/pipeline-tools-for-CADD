@@ -1,189 +1,182 @@
 import streamlit as st
-import io
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
-from Bio.PDB import PDBParser, PPBuilder, PDBList, SASA
-from Bio.SeqUtils import ProtParam
 from streamlit_molstar import st_molstar
+import os
 
-# --- 1. CONFIG & REFINED LIGHT STYLING ---
+# --- 1. PAGE CONFIG & MODERN STYLING ---
 st.set_page_config(page_title="BioMumo | MOMU CORE", layout="wide", page_icon="🧬")
 
 st.markdown("""
     <style>
-    /* Global Light Theme and Modern Font */
-    .stApp { background-color: #fcfcfc; color: #2d3436; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    .main-title { font-size: 38px; font-weight: 800; color: #2d3436; text-align: center; margin-top: -20px; }
+    /* Gradient Background for a "Lab" feel */
+    .stApp { 
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #2d3436; 
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+    }
     
-    /* The Main Diamond-Hexagon Module */
-    .benzene-cluster { display: flex; flex-direction: column; align-items: center; padding: 10px; }
+    .main-title { font-size: 40px; font-weight: 800; color: #1e3799; text-align: center; margin-bottom: 0px; }
+    .tagline { text-align:center; font-weight:600; color:#4a69bd; letter-spacing:2px; margin-bottom: 30px; }
+
+    /* Diamond-Hexagon Module Styling (The "Shell") */
+    .module-container { display: flex; flex-direction: column; align-items: center; padding: 10px; }
     
     .diamond-hexagon {
-        width: 200px; height: 240px;
-        background-color: #ffffff;
-        border: 2.5px solid #2d3436; 
+        width: 210px; height: 250px;
+        background: #ffffff;
+        border: 2px solid #1e3799; 
         clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        position: relative;
         z-index: 2;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
     }
     
-    .hex-image {
-        width: 80px; height: 80px;
-        object-fit: contain;
-        margin-bottom: 10px;
-        opacity: 0.8;
-    }
-    
-    .hexagon-title { font-weight: 800; font-size: 18px; color: #2d3436; text-transform: uppercase; margin: 0; }
-    .hexagon-subtitle { font-size: 13px; color: #636e72; margin-bottom: 10px; }
-    .click-here-accent { font-weight: 700; color: #0984e3; text-transform: uppercase; font-size: 12px; border: 1px solid #0984e3; padding: 2px 8px; border-radius: 4px; }
+    .hex-icon { width: 70px; height: 70px; margin-bottom: 15px; opacity: 0.9; }
+    .hex-title { font-weight: 800; font-size: 19px; color: #2d3436; text-transform: uppercase; margin: 0; }
+    .hex-subtitle { font-size: 12px; color: #636e72; margin-bottom: 8px; }
+    .badge { background: #1e3799; color: white; font-size: 10px; padding: 2px 10px; border-radius: 10px; font-weight: bold; }
 
-    /* Attached Description Box - Exactly matching the schematic stack */
-    .attached-info-box { 
-        background-color: #ffffff; 
-        width: 210px; 
-        padding: 20px 15px 15px 15px; 
-        border-radius: 0 0 10px 10px; 
-        border: 2px solid #2d3436; 
-        margin-top: -30px; /* Overlap to look attached to the bottom point */
+    /* Attached Info Box (The "Body" from your sketch) */
+    .info-box { 
+        background: white; 
+        width: 220px; 
+        padding: 30px 15px 15px 15px; 
+        border-radius: 0 0 15px 15px; 
+        border: 2px solid #1e3799; 
+        margin-top: -35px; 
         z-index: 1;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
     }
-    .info-list { font-size: 13px; color: #2d3436; line-height: 1.8; border-bottom: 1px solid #dfe6e9; padding: 4px 0; }
+    .list-item { font-size: 13px; color: #2d3436; padding: 5px 0; border-bottom: 1px solid #eee; font-weight: 500; }
     
-    /* Refined Button Styling */
-    .stButton>button { width: 100%; border-radius: 5px; border: 1px solid #2d3436; background-color: #ffffff; color: #2d3436; font-weight: 700; font-size: 12px; }
-    .stButton>button:hover { background-color: #2d3436 !important; color: #ffffff !important; }
-    
-    /* Navigation Refinement */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] { background-color: #f0f2f6; border: 1px solid #dfe6e9; border-radius: 5px; padding: 5px 15px; }
+    /* Global Button Styling */
+    .stButton>button { 
+        width: 100%; border-radius: 8px; border: none; 
+        background: #1e3799; color: white; font-weight: 700;
+        transition: 0.3s ease;
+    }
+    .stButton>button:hover { background: #000000; color: white; transform: translateY(-2px); }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. LOGO GENERATOR (Light Theme / Sketch Accurate) ---
-def generate_momu_sketch_logo():
-    fig, ax = plt.subplots(figsize=(12, 3), facecolor='#fcfcfc')
-    ax.set_facecolor('#fcfcfc')
-    ax.set_xlim(-6, 20); ax.set_ylim(-5, 5); ax.axis('off')
+# --- 2. LOGO GENERATOR (Strictly follows your U-M-M-O sketch) ---
+def create_logo():
+    fig, ax = plt.subplots(figsize=(10, 2.5), facecolor='none')
+    ax.set_facecolor('none')
+    ax.set_xlim(-5, 15); ax.set_ylim(-4, 4); ax.axis('off')
     
-    coords = [(0, 2.2), (-1.9, 0), (1.9, 0), (0, -2.2)]
-    labels = ["U", "M", "M", "O"]
+    # Coordinates for the 4 hexagons arranged in a diamond
+    coords = [(0, 2), (-1.8, 0), (1.8, 0), (0, -2)]
+    labels = ["U", "M", "M", "O"] 
     
     for (x, y), label in zip(coords, labels):
-        ring = RegularPolygon((x, y), numVertices=6, radius=1.3, orientation=0, 
-                              edgecolor='#2d3436', facecolor='#f8f9fa', lw=1.2)
-        ax.add_patch(ring)
-        ax.text(x, y, label, color='#2d3436', fontsize=16, fontweight='bold', ha='center', va='center')
+        poly = RegularPolygon((x, y), numVertices=6, radius=1.2, orientation=0, 
+                              edgecolor='#1e3799', facecolor='white', lw=2)
+        ax.add_patch(poly)
+        ax.text(x, y, label, color='#1e3799', fontsize=16, fontweight='bold', ha='center', va='center')
 
-    # Free Radical Dot
-    ax.plot(1.1, -2.9, marker='o', markersize=7, color="#2d3436") 
+    # The specific "dot" (free radical) from your sketch
+    ax.plot(1.2, -2.8, marker='o', markersize=8, color="#1e3799") 
     
-    # Branding
-    ax.text(6, 0.8, "MOMU core", color='#2d3436', fontsize=42, fontweight='black')
-    ax.text(6, -0.6, "The Integrated moleculare Analyzing pipeline", color='#636e72', fontsize=14)
+    ax.text(5, 0.5, "MOMU core", color='#2d3436', fontsize=38, fontweight='black')
+    ax.text(5, -0.8, "The Integrated molecular Analyzing pipeline", color='#636e72', fontsize=12)
     return fig
 
-# --- 3. SESSION STATE ---
-if 'show_desc' not in st.session_state:
-    st.session_state.show_desc = {"p1": False, "p2": False, "p3": False}
-if 'active_file' not in st.session_state:
-    st.session_state.active_file = None
-
-# --- 4. RENDER UI ---
-st.pyplot(generate_momu_sketch_logo())
+# --- 3. UI LAYOUT ---
+st.pyplot(create_logo())
 
 tabs = st.tabs(["Home", "DESCRIPTIONS", "ABOUT US", "Reference", "Contact"])
 
 with tabs[0]:
-    st.markdown('<p style="text-align:center; font-weight:700; color:#636e72; letter-spacing:2px;">COMPUTATIONAL DRUG DISCOVERY PLATFORM</p>', unsafe_allow_html=True)
-    st.markdown('<h1 class="main-title">Biomumo: Opening New Worlds for molecular Discovery</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="tagline">COMPUTATIONAL DRUG DISCOVERY PLATFORM</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-title">Biomumo: Opening New Worlds for Molecular Discovery</h1>', unsafe_allow_html=True)
+    
     st.write("### Home :-")
+    
+    # Top Section: Upload and 3D Viewer
+    col_upload, col_view = st.columns([1, 2])
+    
+    with col_upload:
+        st.subheader("1. Upload PDB File")
+        uploaded_file = st.file_uploader("Choose a .pdb file", type=['pdb'])
+        if uploaded_file:
+            with open("input.pdb", "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success("Structure Loaded Successfully!")
 
-    # File Input and Molstar Visualizer
-    col_in, col_viz = st.columns([1, 2])
-    with col_in:
-        up = st.file_uploader("Upload PDB File", type=['pdb'])
-        if up:
-            with open("temp.pdb", "wb") as f: f.write(up.getbuffer())
-            st.session_state.active_file = "temp.pdb"
-    with col_viz:
-        if st.session_state.active_file:
-            st_molstar(st.session_state.active_file, height=300)
+    with col_view:
+        if os.path.exists("input.pdb"):
+            st_molstar("input.pdb", height=400)
+        else:
+            st.info("Upload a PDB file to view the 3D protein structure here.")
 
     st.divider()
 
-    # --- PIPELINE GRID (3 Columns) ---
+    # Bottom Section: Three Modules (Directly from your drawing)
     c1, c2, c3 = st.columns(3)
 
-    # Column 1: Protein Analysis
+    # MODULE 1: PROTEIN ANALYSIS
     with c1:
-        st.markdown(f"""<div class="benzene-cluster"><div class="diamond-hexagon">
-            <p class="hexagon-title">protein</p>
-            <img src="https://rcsb.org/pdb/images/3fxi_asym_r_500.jpg" class="hex-image">
-            <p class="hexagon-subtitle">protein analysis</p>
-            <p class="click-here-accent">click here</p>
+        st.markdown("""<div class="module-container"><div class="diamond-hexagon">
+            <p class="hex-title">Protein</p>
+            <img src="https://img.icons8.com/plasticine/100/dna.png" class="hex-icon">
+            <p class="hex-subtitle">protein analysis</p>
+            <div class="badge">CLICK HERE</div>
         </div></div>""", unsafe_allow_html=True)
         
-        if st.button("Open Protein Box", key="btn1"):
-            st.session_state.show_desc["p1"] = not st.session_state.show_desc["p1"]
-        
-        if st.session_state.show_desc["p1"]:
-            st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
-            for i in ["Extract Sequence", "Molecular Weight", "pI Calculation", "Instability Index", "GRAVY Score"]:
-                st.markdown(f'<div class="info-list">~ {i}</div>', unsafe_allow_html=True)
-            if st.button("RUN protein analysis", key="run1"):
-                st.success("Analysis Complete")
+        # Using a checkbox to act as a "toggle" for the info box below
+        show_p1 = st.checkbox("Expand Protein Analysis", key="chk1")
+        if show_p1:
+            st.markdown('<div class="module-container"><div class="info-box">', unsafe_allow_html=True)
+            for item in ["Sequence Analysis", "Molecular Weight", "Isoelectric Point", "Stability Index"]:
+                st.markdown(f'<div class="list-item">→ {item}</div>', unsafe_allow_html=True)
+            if st.button("RUN PROTEIN CAT", key="run1"):
+                st.balloons()
+                st.write("Running Analysis...")
             st.markdown('</div></div>', unsafe_allow_html=True)
 
-    # Column 2: Active Site Prediction
+    # MODULE 2: ACTIVE SITE PREDICTION
     with c2:
-        st.markdown(f"""<div class="benzene-cluster"><div class="diamond-hexagon">
-            <p class="hexagon-title">Active</p>
-            <img src="https://cdn.rcsb.org/images/structures/8/8m5s/8m5s_assembly-1.jpeg" class="hex-image">
-            <p class="hexagon-subtitle">site prediction</p>
-            <p class="click-here-accent">click here</p>
+        st.markdown("""<div class="module-container"><div class="diamond-hexagon">
+            <p class="hex-title">Active Site</p>
+            <img src="https://img.icons8.com/plasticine/100/molecule.png" class="hex-icon">
+            <p class="hex-subtitle">site prediction</p>
+            <div class="badge">CLICK HERE</div>
         </div></div>""", unsafe_allow_html=True)
         
-        if st.button("Open Active Site Box", key="btn2"):
-            st.session_state.show_desc["p2"] = not st.session_state.show_desc["p2"]
-            
-        if st.session_state.show_desc["p2"]:
-            st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
-            for i in ["SASA Surface", "Binding Pockets", "Ligand Docking", "Residue Mapping", "Cavity Volume"]:
-                st.markdown(f'<div class="info-list">~ {i}</div>', unsafe_allow_html=True)
-            if st.button("Run Active site predict", key="run2"):
-                st.success("Site Mapping Complete")
+        show_p2 = st.checkbox("Expand Site Prediction", key="chk2")
+        if show_p2:
+            st.markdown('<div class="module-container"><div class="info-box">', unsafe_allow_html=True)
+            for item in ["Pocket Detection", "SASA Analysis", "Ligand Interaction", "Surface Mapping"]:
+                st.markdown(f'<div class="list-item">→ {item}</div>', unsafe_allow_html=True)
+            if st.button("RUN ACTIVE SITE PREDICT", key="run2"):
+                st.balloons()
+                st.write("Predicting Pockets...")
             st.markdown('</div></div>', unsafe_allow_html=True)
 
-    # Column 3: Mutation Prediction
+    # MODULE 3: MUTATION PREDICTION
     with c3:
-        st.markdown(f"""<div class="benzene-cluster"><div class="diamond-hexagon">
-            <p class="hexagon-title">mutartin</p>
-            <img src="https://cdn.rcsb.org/images/structures/1/1aie/1aie_assembly-1.jpeg" class="hex-image">
-            <p class="hexagon-subtitle">mutation prediction</p>
-            <p class="click-here-accent">click here</p>
+        st.markdown("""<div class="module-container"><div class="diamond-hexagon">
+            <p class="hex-title">Mutation</p>
+            <img src="https://img.icons8.com/plasticine/100/test-tube.png" class="hex-icon">
+            <p class="hex-subtitle">mutation prediction</p>
+            <div class="badge">CLICK HERE</div>
         </div></div>""", unsafe_allow_html=True)
         
-        if st.button("Open Mutation Box", key="btn3"):
-            st.session_state.show_desc["p3"] = not st.session_state.show_desc["p3"]
-
-        if st.session_state.show_desc["p3"]:
-            st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
-            for i in ["B-Factor Analysis", "RMSF Calculation", "Energy Stability", "Alanine Scanning", "Mutation Hotspots"]:
-                st.markdown(f'<div class="info-list">~ {i}</div>', unsafe_allow_html=True)
-            if st.button("Run mutation pt", key="run3"):
-                st.success("Mutation Predicted")
+        show_p3 = st.checkbox("Expand Mutation Tools", key="chk3")
+        if show_p3:
+            st.markdown('<div class="module-container"><div class="info-box">', unsafe_allow_html=True)
+            for item in ["B-Factor Scoring", "Alanine Scanning", "Free Energy Change", "Stability Prediction"]:
+                st.markdown(f'<div class="list-item">→ {item}</div>', unsafe_allow_html=True)
+            if st.button("RUN MUTANT PT", key="run3"):
+                st.balloons()
+                st.write("Calculating Mutations...")
             st.markdown('</div></div>', unsafe_allow_html=True)
 
-# Standard info for other tabs
-with tabs[1]:
-    st.info("Technical documentation and mathematical basis of the pipelines.")
+# Footer Information
 with tabs[2]:
-    st.write("Developed at Vinayaka Mission's College of Pharmacy.")
-with tabs[4]:
-    st.write("Contact: Mowriss.M.G & Mugilarasi.C")
+    st.write("### About BioMumo")
+    st.write("**Developers:** Mowriss M.G & Mugilarasi C.")
+    st.write("**Institution:** Vinayaka Mission's College of Pharmacy")
+    st.write("This tool is designed to assist in computational drug discovery and protein engineering.")
