@@ -86,7 +86,7 @@ def create_logo():
     ax.set_xlim(-5, 15); ax.set_ylim(-4, 4); ax.axis('off')
     
     coords = [(0, 2), (-1.8, 0), (1.8, 0), (0, -2)]
-    labels = ["C", "M", "M", "O"] # Matches the C-M-M-O in sketch
+    labels = ["u", "M", "M", "O"] # Matches the C-M-M-O in sketch
     
     for (x, y), label in zip(coords, labels):
         poly = RegularPolygon((x, y), numVertices=6, radius=1.2, orientation=0, 
