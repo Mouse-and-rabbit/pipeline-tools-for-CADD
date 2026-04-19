@@ -59,18 +59,27 @@ def create_prof_report(title, methodology, df):
     doc.save(bio)
     return bio.getvalue()
 
-def generate_biomumo_logo():
-    fig, ax = plt.subplots(figsize=(18, 2.0), facecolor='#0b0f19')
-    ax.set_facecolor('#0b0f19')
-    ax.set_xlim(-8, 28); ax.set_ylim(-4, 4); ax.axis('off')
-    chem_color, accent_color = '#ffffff', '#00d4ff'
-    ring_centers = [(-4, 0), (-1, 0), (2, 0), (5, 0)]
-    letters = ["M", "U", "M", "O"]
-    for center, letter in zip(ring_centers, letters):
-        ring = RegularPolygon(center, numVertices=6, radius=1.3, orientation=0, edgecolor=chem_color, facecolor='none', lw=2)
-        ax.add_patch(ring)
-        ax.text(center[0], center[1], letter, color=accent_color, fontsize=16, fontweight='black', ha='center', va='center')
-    ax.text(11, 0.5, "MUMO CORE", color='#ffffff', fontsize=48, fontweight='black')
+# --- 2. LOGO GENERATOR (Matches your U-M-M-O sketch) ---
+def create_logo():
+    fig, ax = plt.subplots(figsize=(10, 2.5), facecolor='none')
+    ax.set_facecolor('none')
+    ax.set_xlim(-5, 15); ax.set_ylim(-4, 4); ax.axis('off')
+    
+    # Coordinates for the 4 hexagons
+    coords = [(0, 2), (-1.8, 0), (1.8, 0), (0, -2)]
+    labels = ["U", "M", "M", "O"] 
+    
+    for (x, y), label in zip(coords, labels):
+        poly = RegularPolygon((x, y), numVertices=6, radius=1.2, orientation=0, 
+                              edgecolor='#1e3799', facecolor='white', lw=2)
+        ax.add_patch(poly)
+        ax.text(x, y, label, color='#1e3799', fontsize=16, fontweight='bold', ha='center', va='center')
+
+    # The specific "dot" from your sketch
+    ax.plot(1.2, -2.8, marker='o', markersize=8, color="#1e3799") 
+    
+    ax.text(5, 0.5, "MOMU core", color='#2d3436', fontsize=38, fontweight='black')
+    ax.text(5, -0.8, "The Integrated molecular Analyzing pipeline", color='#636e72', fontsize(12))
     return fig
 
 # --- 3. SESSION STATE ---
