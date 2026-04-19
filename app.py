@@ -1,175 +1,185 @@
 import streamlit as st
-import matplotlib.pyplot as plt
-from matplotlib.patches import RegularPolygon, Circle
-from streamlit_molstar import st_molstar
-import os
 import io
 import pandas as pd
-from Bio.PDB import PDBParser, PPBuilder, SASA
+import numpy as np
+import matplotlib.pyplot as plt
+import requests
+from matplotlib.patches import RegularPolygon
+from Bio.PDB import PDBParser, PPBuilder, PDBList, SASA
 from Bio.SeqUtils import ProtParam
+from docx import Document
+from docx.shared import Inches, RGBColor
+from streamlit_molstar import st_molstar
+from matplotlib.patches import RegularPolygon
 
-# --- 1. PAGE CONFIG & INTEGRATED STYLING ---
+# --- 1. CONFIG & SCHRÖDINGER-INSPIRED STYLING ---
+# --- 1. CONFIG & REFINED STYLING ---
 st.set_page_config(page_title="BioMumo | MOMU CORE", layout="wide", page_icon="🧬")
 
 st.markdown("""
-    <style>
-    .stApp { background-color: #ffffff; color: #000000; font-family: 'Helvetica Neue', Arial, sans-serif; }
-    
-    .main-title { font-size: 36px; font-weight: 800; color: #1e3799; text-align: center; margin-bottom: 0px; }
-    .tagline { text-align:center; font-weight:600; color:#4a69bd; letter-spacing:2px; margin-bottom: 30px; }
-
-    /* Tool Column Layout */
-    .tool-column { display: flex; flex-direction: column; align-items: center; margin: 10px; padding-bottom: 20px; }
-
-    /* Diamond-Hexagon Shape from Sketch */
-    .diamond-shape {
-        width: 220px; height: 260px; background: #ffffff; border: 2px solid #000000; 
+@@ -23,10 +20,12 @@
+    .benzene-container { display: flex; flex-direction: column; align-items: center; padding: 10px; }
+    .hexagon {
+        width: 180px; height: 210px;
+        background: linear-gradient(45deg, #00d4ff, #005f73);
+        background: rgba(0, 212, 255, 0.05);
+        /* Thinner border style */
         clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        z-index: 10; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid #ffffff;
+        border: 1px solid #00d4ff; 
+        transition: 0.3s;
     }
+    .hexagon img {
+        width: 150px; height: 150px;
+@@ -38,39 +37,36 @@
     
-    .hex-title { font-weight: 800; font-size: 19px; color: #000000; text-transform: uppercase; margin: 0; }
-    .hex-img { width: 110px; height: 90px; margin: 5px 0; object-fit: contain; }
-    .hex-subtitle { font-size: 12px; color: #636e72; margin-bottom: 8px; font-weight: bold; }
-    .badge-btn { background: #1e3799; color: white; font-size: 10px; padding: 2px 10px; border-radius: 10px; font-weight: bold; border: none;}
-
-    /* List Box Container */
-    .list-box-container { 
-        background: #ffffff; width: 200px; padding: 45px 15px 15px 15px; 
-        border-radius: 0 0 15px 15px; border: 2px solid #000000; 
-        margin-top: -55px; z-index: 5;
-    }
-    .sketch-list-item { font-size: 13px; color: #000000; padding: 5px 0; border-bottom: 1px solid #eee; font-weight: 500; }
-    
-    .stButton>button { 
-        width: 100%; border-radius: 8px; border: 2px solid #000000; 
-        background: #f8f9fa; color: #000000; font-weight: 700; text-transform: uppercase;
-    }
-    .stButton>button:hover { background: #1e3799 !important; color: white !important; }
+    /* Button Customization */
+    .stButton>button { width: 100%; border-radius: 5px; border: 1px solid #00d4ff; background-color: transparent; color: #00d4ff; font-weight: 600; }
+    .stButton>button:hover { background-color: #00d4ff; color: #0b0f19; }
+    .stButton>button:hover { background-color: #00d4ff !important; color: #0b0f19 !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. LOGO GENERATOR (Strictly U-M-M-O Pattern) ---
-def create_logo():
-    fig, ax = plt.subplots(figsize=(10, 3), facecolor='none')
-    ax.set_facecolor('none')
-    ax.set_xlim(-5, 15); ax.set_ylim(-4, 4); ax.axis('off')
-    
-    # Outer Circle
-    circle = Circle((0, 0), 3.3, edgecolor='#000000', facecolor='none', lw=1.8)
-    ax.add_patch(circle)
-    
-    # Hexagon Cluster
-    coords = [(0, 1.8), (-1.6, 0), (1.6, 0), (0, -1.8)]
-    labels = ["U", "M", "M", "O"] 
-    for (x, y), label in zip(coords, labels):
-        poly = RegularPolygon((x, y), numVertices=6, radius=1.0, orientation=0, 
-                              edgecolor='#000000', facecolor='white', lw=1.5)
-        ax.add_patch(poly)
-        ax.text(x, y, label, color='#000000', fontsize=14, fontweight='bold', ha='center', va='center')
+# --- 2. CORE UTILITIES ---
+def create_prof_report(title, methodology, df):
+    doc = Document()
+    header = doc.add_heading(title, 0)
+    header.runs[0].font.color.rgb = RGBColor(30, 58, 170)
+    doc.add_heading('Methodology', level=1)
+    doc.add_paragraph(methodology)
+    doc.add_heading('Results', level=1)
+    table = doc.add_table(df.shape[0] + 1, df.shape[1])
+    table.style = 'Table Grid'
+    for j, col in enumerate(df.columns): table.cell(0, j).text = str(col)
+    for i, row in enumerate(df.values):
+        for j, val in enumerate(row): table.cell(i + 1, j).text = str(val)
+    bio = io.BytesIO()
+    doc.save(bio)
+    return bio.getvalue()
 
-    ax.text(2.6, -1.6, "X", color='#000000', fontsize=20, fontweight='bold', ha='center', va='center') 
-    ax.text(5, 0.6, "MOMU core", color='#1e3799', fontsize=40, fontweight='black')
-    ax.text(5, -0.7, "The Integrated molecular Analyzing pipeline", color='#636e72', fontsize=12)
+def generate_biomumo_logo():
+    fig, ax = plt.subplots(figsize=(18, 2.0), facecolor='#0b0f19')
+# --- 2. EXACT LOGO GENERATOR (From User Sketch) ---
+def generate_momu_sketch_logo():
+    fig, ax = plt.subplots(figsize=(10, 3), facecolor='#0b0f19')
+    ax.set_facecolor('#0b0f19')
+    ax.set_xlim(-8, 28); ax.set_ylim(-4, 4); ax.axis('off')
+    chem_color, accent_color = '#ffffff', '#00d4ff'
+    ring_centers = [(-4, 0), (-1, 0), (2, 0), (5, 0)]
+    letters = ["M", "U", "M", "O"]
+    for center, letter in zip(ring_centers, letters):
+        ring = RegularPolygon(center, numVertices=6, radius=1.3, orientation=0, edgecolor=chem_color, facecolor='none', lw=2)
+    ax.set_xlim(-6, 18); ax.set_ylim(-5, 5); ax.axis('off')
+    
+    # Diamond Cluster Coordinates for U-M-M-O
+    # Top, Left, Right, Bottom
+    coords = [(0, 2.2), (-1.9, 0), (1.9, 0), (0, -2.2)]
+    labels = ["U", "M", "M", "O"]
+    
+    # Draw Ring Cluster
+    for (x, y), label in zip(coords, labels):
+        # Thinner line width (lw=1) as requested
+        ring = RegularPolygon((x, y), numVertices=6, radius=1.3, orientation=0, 
+                              edgecolor='#ffffff', facecolor='none', lw=1.2)
+        ax.add_patch(ring)
+        ax.text(center[0], center[1], letter, color=accent_color, fontsize=16, fontweight='black', ha='center', va='center')
+    ax.text(11, 0.5, "MUMO CORE", color='#ffffff', fontsize=48, fontweight='black')
+        ax.text(x, y, label, color='#00d4ff', fontsize=15, fontweight='bold', ha='center', va='center')
+
+    # Add Free Radical Dot (at the bottom right vertex of the cluster)
+    ax.plot(1.1, -2.9, marker='o', markersize=6, color="#00d4ff") 
+    
+    # Text Branding (MOMU - The integrated molecular Analyzing pipeline)
+    ax.text(5.5, 0.8, "MOMU", color='#ffffff', fontsize=42, fontweight='black')
+    ax.text(5.5, -0.6, "THE INTEGRATED MOLECULAR ANALYZING PIPELINE", color='#94a3b8', fontsize=12, fontweight='bold')
+    
     return fig
 
-# --- 3. UI RENDER ---
-st.pyplot(create_logo())
+# --- 3. SESSION STATE ---
+@@ -80,11 +76,11 @@
+    st.session_state.active_file = None
 
-tabs = st.tabs(["Home", "DESCRIPTIONS", "ABOUT US", "Reference", "Contact"])
+# --- 4. RENDER UI ---
+st.pyplot(generate_biomumo_logo())
+st.pyplot(generate_momu_sketch_logo())
+tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
 with tabs[0]:
-    st.markdown('<p class="tagline">COMPUTATIONAL DRUG DISCOVERY PLATFORM</p>', unsafe_allow_html=True)
-    st.markdown('<h1 class="main-title">Biomumo: Opening New Worlds for Molecular Discovery</h1>', unsafe_allow_html=True)
-    
-    # File Management
-    col_up, col_3d = st.columns([1, 2])
-    with col_up:
-        st.subheader("1. Target Selection")
-        uploaded_file = st.file_uploader("Upload .pdb file", type=['pdb'])
-        if uploaded_file:
-            with open("active.pdb", "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            st.success("Target Loaded!")
+    st.markdown('<h1 class="main-title">BioMumo: Molecular Discovery Pipeline</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-title">BioMumo: Molecular Discovery Platform</h1>', unsafe_allow_html=True)
 
-    with col_3d:
-        if os.path.exists("active.pdb"):
-            st_molstar("active.pdb", height=400)
-        else:
-            st.info("Upload a structure to begin visualization.")
-
-    st.divider()
-
-    # Pipeline Grid
+    # Target Selection
+    col_in, col_viz = st.columns([1, 2])
+@@ -116,11 +112,13 @@
+    # --- PIPELINE GRID ---
     c1, c2, c3 = st.columns(3)
 
-    # MODULE 1: PROTEIN
+    # PIPELINE 1
+    # PIPELINE 1: Protein Analysis
     with c1:
-        st.markdown("""
-        <div class="tool-column">
-            <div class="diamond-shape">
-                <p class="hex-title">Protein</p>
-                <img src="https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2519&t=l" class="hex-img">
-                <p class="hex-subtitle">protein analysis</p>
-                <button class="badge-btn">CLICK HERE</button>
-            </div>
-            <div class="list-box-container">
-                <div class="sketch-list-item">• MW & pI Calculation</div>
-                <div class="sketch-list-item">• Instability Index</div>
-        """, unsafe_allow_html=True)
-        if st.button("RUN PROTEIN CAT", key="p1"):
-            if os.path.exists("active.pdb"):
-                parser = PDBParser(QUIET=True)
-                struct = parser.get_structure("T", "active.pdb")
-                ppb = PPBuilder()
-                seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(struct)])
-                analysis = ProtParam.ProteinAnalysis(seq)
-                st.write(f"**MW:** {analysis.molecular_weight()/1000:.2f} kDa")
-                st.write(f"**pI:** {analysis.isoelectric_point():.2f}")
-            else: st.warning("Please upload a PDB.")
-        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('<p class="pipeline-title">Protein Analysis</p>', unsafe_allow_html=True)
+        st.markdown('<div class="benzene-container"><div class="hexagon"><img src="https://rcsb.org/pdb/images/3fxi_asym_r_500.jpg"></div></div>', unsafe_allow_html=True)
+        if st.button("Click Here", key="btn1"): st.session_state.show_desc["p1"] = not st.session_state.show_desc["p1"]
+        if st.button("Click Here", key="btn1"): 
+            st.session_state.show_desc["p1"] = not st.session_state.show_desc["p1"]
+        
+        if st.session_state.show_desc["p1"]:
+            st.markdown('<div class="info-box">1. Extracts sequence data.<br>2. Calculates MW (kDa).<br>3. Computes pI.<br>4. Measures Instability Index.<br>5. Evaluates hydrophobicity.</div>', unsafe_allow_html=True)
+            if st.button("▶ Run Protein Analysis") and st.session_state.active_file:
+@@ -132,11 +130,13 @@
+                df = pd.DataFrame({'Parameter': ['MW', 'pI', 'Instability'], 'Value': [f"{ana.molecular_weight()/1000:.2f} kDa", f"{ana.isoelectric_point():.2f}", f"{ana.instability_index():.2f}"]})
+                st.table(df)
 
-    # MODULE 2: ACTIVE SITE
+    # PIPELINE 2
+    # PIPELINE 2: Active Site Prediction
     with c2:
-        st.markdown("""
-        <div class="tool-column">
-            <div class="diamond-shape">
-                <p class="hex-title">Active Site</p>
-                <img src="https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=5280343&t=l" class="hex-img">
-                <p class="hex-subtitle">site prediction</p>
-                <button class="badge-btn">CLICK HERE</button>
-            </div>
-            <div class="list-box-container">
-                <div class="sketch-list-item">• SASA Computation</div>
-                <div class="sketch-list-item">• Pocket Mapping</div>
-        """, unsafe_allow_html=True)
-        if st.button("RUN ACTIVE SITE", key="p2"):
-            st.info("Predicting Catalytic Sites...")
-        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('<p class="pipeline-title">Active Site Prediction</p>', unsafe_allow_html=True)
+        st.markdown('<div class="benzene-container"><div class="hexagon"><img src="https://cdn.rcsb.org/images/structures/8/8m5s/8m5s_assembly-1.jpeg"></div></div>', unsafe_allow_html=True)
+        if st.button("Click Here", key="btn2"): st.session_state.show_desc["p2"] = not st.session_state.show_desc["p2"]
+        if st.button("Click Here", key="btn2"): 
+            st.session_state.show_desc["p2"] = not st.session_state.show_desc["p2"]
+        
+        if st.session_state.show_desc["p2"]:
+            st.markdown('<div class="info-box">1. Computes SASA.<br>2. Identifies pocket residues.<br>3. Ranks by exposure.<br>4. Predicts binding affinity.<br>5. Maps catalytic sites.</div>', unsafe_allow_html=True)
+            if st.button("▶ Run Site Mapping") and st.session_state.active_file:
+@@ -147,11 +147,13 @@
+                sites = [{'Residue': f"{res.get_resname()}{res.id[1]}", 'SASA': round(res.sasa, 2)} for res in structure.get_residues() if hasattr(res, 'sasa')]
+                st.dataframe(pd.DataFrame(sites).nlargest(10, 'SASA'), use_container_width=True)
 
-    # MODULE 3: MUTATION
+    # PIPELINE 3
+    # PIPELINE 3: Mutation Prediction
     with c3:
-        st.markdown("""
-        <div class="tool-column">
-            <div class="diamond-shape">
-                <p class="hex-title">Mutation</p>
-                <img src="https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=5950&t=l" class="hex-img">
-                <p class="hex-subtitle">mutation prediction</p>
-                <button class="badge-btn">CLICK HERE</button>
-            </div>
-            <div class="list-box-container">
-                <div class="sketch-list-item">• B-Factor Scoring</div>
-                <div class="sketch-list-item">• Stability Prediction</div>
-        """, unsafe_allow_html=True)
-        if st.button("RUN MUTANT PT", key="p3"):
-            st.info("Calculating Structural Flexibility...")
-        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('<p class="pipeline-title">Mutation Prediction</p>', unsafe_allow_html=True)
+        st.markdown('<div class="benzene-container"><div class="hexagon"><img src="https://cdn.rcsb.org/images/structures/1/1aie/1aie_assembly-1.jpeg"></div></div>', unsafe_allow_html=True)
+        if st.button("Click Here", key="btn3"): st.session_state.show_desc["p3"] = not st.session_state.show_desc["p3"]
+        if st.button("Click Here", key="btn3"): 
+            st.session_state.show_desc["p3"] = not st.session_state.show_desc["p3"]
+        
+        if st.session_state.show_desc["p3"]:
+            st.markdown('<div class="info-box">1. Analyzes B-factors.<br>2. Finds flexible regions.<br>3. Predicts mutation impact.<br>4. Suggests substitutions.<br>5. Heatmap visualization.</div>', unsafe_allow_html=True)
+            if st.button("▶ Run Mutation Analysis") and st.session_state.active_file:
+@@ -161,18 +163,18 @@
+                df_mut = pd.DataFrame(res_data).groupby('Pos').mean().reset_index()
+                st.line_chart(df_mut.set_index('Pos')['B'])
 
+# --- RE-ADDING ORIGINAL DESCRIPTIONS TAB ---
+# --- (REMAINING TABS KEPT FOR COMPLETENESS) ---
 with tabs[1]:
-    st.markdown("## Methodology")
-    st.latex(r"Score = (w1 \times \text{Normalized SASA}) + (w2 \times \text{Normalized B-factor})")
+    st.markdown('<h2 class="main-title">Methodology & Mathematical Basis</h2>', unsafe_allow_html=True)
+    st.info("**Isoelectric Point (pI):** $pI = (pK_i + pK_j)/2$. Determines pH where the enzyme has no net charge.")
+    st.info("**B-factor Analysis:** Represents thermal displacement. High B-factors = High flexibility.")
+    st.info("**Isoelectric Point (pI):** $pI = (pK_i + pK_j)/2$.")
+    st.info("**B-factor Analysis:** Represents thermal displacement.")
 
 with tabs[2]:
     st.write("### Vinayaka Mission's College of Pharmacy")
-    st.write("Developed by Mowriss M.G & Mugilarasi C.")
+    st.write("Developed by Mowriss.M.G & Mugilarasi.C. Bridging Pharmacy with Computational Proteomics.")
+    st.write("Developed by Mowriss.M.G & Mugilarasi.C.")
+
+with tabs[3]:
+    st.write("1. Biopython: Bioinformatics tools. 2. ExPASy ProtParam algorithm. 3. AlphaFold 3 (Reference).")
+    st.write("1. Biopython tools. 2. ExPASy ProtParam. 3. AlphaFold 3.")
+
+with tabs[4]:
+    st.write("Contact: Mowriss.M.G & Mugilarasi.C | VMCP Research Scholars.")
