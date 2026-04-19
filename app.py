@@ -1,17 +1,15 @@
 import streamlit as st
 import matplotlib.pyplot as plt
-from matplotlib.patches import RegularPolygon
+from matplotlib.patches import RegularPolygon, Circle
 from streamlit_molstar import st_molstar
 import os
 
-# --- 1. PAGE CONFIG & BASIC STYLING ---
+# --- 1. PAGE CONFIG & STYLING ---
 st.set_page_config(page_title="BioMumo | MOMU CORE", layout="wide", page_icon="🧬")
 
-# Custom CSS to match the sketch's simple, clean, stacked layout.
-# Key addition: `diamond-shape` and `list-box-container` with vertical stacking.
 st.markdown("""
     <style>
-    /* Global Styling: Simple, White, Non-Glassy */
+    /* Global Background and Typography */
     .stApp { 
         background-color: #ffffff;
         color: #000000; 
@@ -21,7 +19,7 @@ st.markdown("""
     .main-title { font-size: 36px; font-weight: 800; color: #1e3799; text-align: center; margin-bottom: 0px; }
     .tagline { text-align:center; font-weight:600; color:#4a69bd; letter-spacing:2px; margin-bottom: 30px; }
 
-    /* The Stacked Tool Layout */
+    /* Vertical Stack Container */
     .tool-column {
         display: flex;
         flex-direction: column;
@@ -30,78 +28,81 @@ st.markdown("""
         padding-bottom: 20px;
     }
 
-    /* 1. The Top Diamond Shape (uses clip-path) */
+    /* Diamond-Hexagon Header Shape */
     .diamond-shape {
         width: 220px;
         height: 260px;
         background: #ffffff;
         border: 2px solid #000000; 
-        /* The diamond/elongated hexagon path */
         clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 10; /* Keep on top of list box slightly */
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle shadow for definition */
+        z-index: 10;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     
     .hex-title { font-weight: 800; font-size: 19px; color: #000000; text-transform: uppercase; margin: 0; }
-    .hex-icon { width: 70px; height: 70px; margin: 10px 0; opacity: 0.9; }
-    .hex-subtitle { font-size: 12px; color: #636e72; margin-bottom: 8px; }
+    .hex-img { width: 110px; height: 90px; margin: 5px 0; object-fit: contain; }
+    .hex-subtitle { font-size: 12px; color: #636e72; margin-bottom: 8px; font-weight: bold; }
     .badge-btn { background: #1e3799; color: white; font-size: 10px; padding: 2px 10px; border-radius: 10px; font-weight: bold; text-transform: uppercase; border: none;}
 
-    /* 2. The Attached List Box Below */
+    /* List Box Container (Attached to Diamond) */
     .list-box-container { 
         background: #ffffff; 
-        width: 200px; /* Slightly narrower to fit under diamond nicely */
-        padding: 40px 15px 15px 15px; /* Large top padding to appear "below" diamond point */
+        width: 200px; 
+        padding: 45px 15px 15px 15px; 
         border-radius: 0 0 15px 15px; 
         border: 2px solid #000000; 
-        margin-top: -50px; /* Overlap with diamond to create attached look */
+        margin-top: -55px; 
         z-index: 5;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
     }
     .sketch-list-item { font-size: 13px; color: #000000; padding: 5px 0; border-bottom: 1px solid #eee; font-weight: 500; }
     
-    /* 3. The Bottom "Run" Buttons */
-    .run-btn-container {
-        margin-top: 15px;
-        width: 100%;
-    }
+    .run-btn-container { margin-top: 15px; width: 100%; }
+    
+    /* Streamlit Button Overrides */
     .stButton>button { 
         width: 100%; border-radius: 8px; border: 2px solid #000000; 
         background: #f8f9fa; color: #000000; font-weight: 700;
         text-transform: uppercase;
-        transition: 0.3s ease;
+        transition: 0.2s;
     }
-    .stButton>button:hover { background: #1e3799; color: white; border-color: #1e3799; transform: translateY(-2px); }
+    .stButton>button:hover { background: #1e3799; color: white; border-color: #1e3799; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. LOGO GENERATOR (Strictly follows the sketch's C-M-M-O pattern) ---
+# --- 2. LOGO GENERATOR (Circled U-M-M-O) ---
 def create_logo():
-    fig, ax = plt.subplots(figsize=(10, 2.5), facecolor='none')
+    fig, ax = plt.subplots(figsize=(10, 3), facecolor='none')
     ax.set_facecolor('none')
     ax.set_xlim(-5, 15); ax.set_ylim(-4, 4); ax.axis('off')
     
-    coords = [(0, 2), (-1.8, 0), (1.8, 0), (0, -2)]
-    labels = ["u", "M", "M", "O"] # Matches the C-M-M-O in sketch
+    # Outer Circle encompassing the hexagons
+    circle = Circle((0, 0), 3.3, edgecolor='#000000', facecolor='none', lw=1.8)
+    ax.add_patch(circle)
+    
+    # Hexagon Coordinates and Labels
+    coords = [(0, 1.8), (-1.6, 0), (1.6, 0), (0, -1.8)]
+    labels = ["U", "M", "M", "O"] 
     
     for (x, y), label in zip(coords, labels):
-        poly = RegularPolygon((x, y), numVertices=6, radius=1.2, orientation=0, 
-                              edgecolor='#000000', facecolor='white', lw=2)
+        poly = RegularPolygon((x, y), numVertices=6, radius=1.0, orientation=0, 
+                              edgecolor='#000000', facecolor='white', lw=1.5)
         ax.add_patch(poly)
-        ax.text(x, y, label, color='#000000', fontsize=16, fontweight='bold', ha='center', va='center')
+        ax.text(x, y, label, color='#000000', fontsize=14, fontweight='bold', ha='center', va='center')
 
-    # The specific "X" mark from the sketch
-    ax.text(2.8, -1.8, "X", color='#000000', fontsize=20, fontweight='bold', ha='center', va='center') 
+    # The "X" marker from your sketch
+    ax.text(2.6, -1.6, "X", color='#000000', fontsize=20, fontweight='bold', ha='center', va='center') 
     
-    ax.text(5, 0.5, "MOMU core", color='#1e3799', fontsize=38, fontweight='black')
-    ax.text(5, -0.8, "The Integrated molecular Analyzing pipeline", color='#636e72', fontsize=12)
+    # Title Text
+    ax.text(5, 0.6, "MOMU core", color='#1e3799', fontsize=40, fontweight='black')
+    ax.text(5, -0.7, "The Integrated molecular Analyzing pipeline", color='#636e72', fontsize=13)
     return fig
 
-# --- 3. UI LAYOUT ---
+# --- 3. UI RENDER ---
 st.pyplot(create_logo())
 
 tabs = st.tabs(["Home", "DESCRIPTIONS", "ABOUT US", "Reference", "Contact"])
@@ -112,125 +113,88 @@ with tabs[0]:
     
     st.write("### Home :-")
     
-    # Top Section: Upload and 3D Viewer (Keep functional)
-    col_upload, col_view = st.columns([1, 2])
-    
-    with col_upload:
+    # Data Input and View
+    col_up, col_3d = st.columns([1, 2])
+    with col_up:
         st.subheader("1. Upload PDB File")
         uploaded_file = st.file_uploader("Choose a .pdb file", type=['pdb'])
         if uploaded_file:
             with open("input.pdb", "wb") as f:
                 f.write(uploaded_file.getbuffer())
-            st.success("Structure Loaded Successfully!")
+            st.success("Structure Uploaded!")
 
-    with col_view:
+    with col_3d:
         if os.path.exists("input.pdb"):
             st_molstar("input.pdb", height=400)
         else:
-            st.info("Upload a PDB file to view the 3D protein structure here.")
+            st.info("Upload a PDB file to view the 3D structure.")
 
     st.divider()
 
-    # --- THE TOOL GRID (Stacked Diamond Layout from Sketch) ---
-    # We use a standard Streamlit column for positioning, but inject our stacked components.
+    # Tool Grid
     c1, c2, c3 = st.columns(3)
 
-    # MODULE 1: PROTEIN ANALYSIS (Stacked)
+    # MODULE 1: PROTEIN
     with c1:
-        # 1. The Top Diamond Component (HTML)
         st.markdown("""
         <div class="tool-column">
             <div class="diamond-shape">
                 <p class="hex-title">Protein</p>
-                <img src="https://img.icons8.com/plasticine/100/dna.png" class="hex-icon">
+                <img src="https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=2519&t=l" class="hex-img">
                 <p class="hex-subtitle">protein analysis</p>
                 <button class="badge-btn">CLICK HERE</button>
             </div>
-            
             <div class="list-box-container">
-                <div class="sketch-list-item">• Placeholder Utility Item 1</div>
-                <div class="sketch-list-item">• Placeholder Utility Item 2</div>
-                <div class="sketch-list-item">• Placeholder Utility Item 3</div>
-                <div class="sketch-list-item">• Placeholder Utility Item 4</div>
+                <div class="sketch-list-item">• Sequence Analysis</div>
+                <div class="sketch-list-item">• Molecular Weight</div>
+                <div class="sketch-list-item">• Stability Index</div>
                 <div class="run-btn-container">
         """, unsafe_allow_html=True)
-        
-        # Injected Streamlit button (so it's functional)
         if st.button("RUN PROTEIN CAT", key="run1"):
-            st.write("Running Protein Analysis...")
-        
-        # Closing HTML divs
-        st.markdown("""
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            st.info("Analyzing Protein Data...")
+        st.markdown('</div></div></div>', unsafe_allow_html=True)
 
-
-    # MODULE 2: ACTIVE SITE PREDICTION (Stacked)
+    # MODULE 2: ACTIVE SITE
     with c2:
-        # 1. The Top Diamond Component (HTML)
         st.markdown("""
         <div class="tool-column">
             <div class="diamond-shape">
                 <p class="hex-title">Active Site</p>
-                <img src="https://img.icons8.com/plasticine/100/molecule.png" class="hex-icon">
+                <img src="https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=5280343&t=l" class="hex-img">
                 <p class="hex-subtitle">site prediction</p>
                 <button class="badge-btn">CLICK HERE</button>
             </div>
-            
             <div class="list-box-container">
-                <div class="sketch-list-item">• Placeholder Site Item 1</div>
-                <div class="sketch-list-item">• Placeholder Site Item 2</div>
-                <div class="sketch-list-item">• Placeholder Site Item 3</div>
-                <div class="sketch-list-item">• Placeholder Site Item 4</div>
+                <div class="sketch-list-item">• Pocket Detection</div>
+                <div class="sketch-list-item">• Surface Area (SASA)</div>
+                <div class="sketch-list-item">• Surface Mapping</div>
                 <div class="run-btn-container">
         """, unsafe_allow_html=True)
-        
-        # Injected Streamlit button
         if st.button("RUN ACTIVE SITE PREDICT", key="run2"):
-            st.write("Predicting Pockets...")
-        
-        # Closing HTML divs
-        st.markdown("""
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            st.info("Predicting Catalytic Pockets...")
+        st.markdown('</div></div></div>', unsafe_allow_html=True)
 
-
-    # MODULE 3: MUTATION PREDICTION (Stacked)
+    # MODULE 3: MUTATION
     with c3:
-        # 1. The Top Diamond Component (HTML)
         st.markdown("""
         <div class="tool-column">
             <div class="diamond-shape">
                 <p class="hex-title">Mutation</p>
-                <img src="https://img.icons8.com/plasticine/100/test-tube.png" class="hex-icon">
+                <img src="https://pubchem.ncbi.nlm.nih.gov/image/imgsrv.fcgi?cid=5950&t=l" class="hex-img">
                 <p class="hex-subtitle">mutation prediction</p>
                 <button class="badge-btn">CLICK HERE</button>
             </div>
-            
             <div class="list-box-container">
-                <div class="sketch-list-item">• Placeholder Mutation Item 1</div>
-                <div class="sketch-list-item">• Placeholder Mutation Item 2</div>
-                <div class="sketch-list-item">• Placeholder Mutation Item 3</div>
-                <div class="sketch-list-item">• Placeholder Mutation Item 4</div>
+                <div class="sketch-list-item">• B-Factor Scoring</div>
+                <div class="sketch-list-item">• Free Energy Change</div>
+                <div class="sketch-list-item">• Stability Prediction</div>
                 <div class="run-btn-container">
         """, unsafe_allow_html=True)
-        
-        # Injected Streamlit button
         if st.button("RUN MUTANT PT", key="run3"):
-            st.write("Calculating Mutations...")
-        
-        # Closing HTML divs
-        st.markdown("""
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            st.info("Calculating Mutation Effects...")
+        st.markdown('</div></div></div>', unsafe_allow_html=True)
 
-# Other Tabs (Keep functional)
+# Footer/About Info
 with tabs[2]:
     st.write("### About BioMumo")
     st.write("**Developers:** Mowriss M.G & Mugilarasi C.")
