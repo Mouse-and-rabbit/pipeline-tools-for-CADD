@@ -137,16 +137,6 @@ st.markdown('<h1 class="main-title">Biomumo : OPENING New Worlds for molecular D
 
 st.write("#### Home :-")
 
-# Input Area
-with st.expander("📂 TARGET INPUT (Upload PDB or Enter ID)", expanded=True):
-    col_up, col_id = st.columns(2)
-    with col_up:
-        up = st.file_uploader("Upload Structure", type=['pdb'])
-    with col_id:
-        pid = st.text_input("OR Enter PDB ID", placeholder="e.g. 3FXI")
-
-st.divider()
-
 # Main 3-Column Interface
 c1, c2, c3 = st.columns(3)
 
