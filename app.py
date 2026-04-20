@@ -130,59 +130,79 @@ with tabs[0]:
 
     st.divider()
     
-    # Main 3-Column Interface
-    c1, c2, c3 = st.columns(3)
+    # --- UPDATED HOME PAGE LOGIC (Place this inside 'with tabs[0]:') ---
 
-    # Column 1: Protein Analysis
-    with c1:
-        st.markdown("""<div class="benzene-cluster"><div class="diamond-hexagon">
-            <p class="hexagon-title">protein</p>
-            <p style="margin:0;">Image</p>
-            <img src="https://rcsb.org/pdb/images/3fxi_asym_r_500.jpg" class="hex-image">
-            <p style="font-size:12px; margin:0;">protein analysis</p>
-            <div class="click-here-accent">click here</div>
-        </div></div>""", unsafe_allow_html=True)
-        if st.button("Toggle Protein", key="btn1"): st.session_state.show_desc["p1"] = not st.session_state.show_desc["p1"]
-        if st.session_state.show_desc["p1"]:
-            st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
-            for i in ["• Parameter calculation", "• pI determination", "• GRAVY score"]:
-                st.markdown(f'<div class="info-list">{i}</div>', unsafe_allow_html=True)
-            st.button("RUN protein cat", key="run1")
-            st.markdown('</div></div>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; font-weight:700; color:#2d3436; letter-spacing:1px; margin-top:10px;">COMPUTATIONAL DRUG DISCOVERY PLATFORM</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title">Biomumo : OPENING New Worlds for molecular Discovery</h1>', unsafe_allow_html=True)
 
-    # Column 2: Active Site
-    with c2:
-        st.markdown("""<div class="benzene-cluster"><div class="diamond-hexagon">
-            <p class="hexagon-title">Active site</p>
-            <p style="margin:0;">image</p>
-            <img src="https://cdn.rcsb.org/images/structures/8/8m5s/8m5s_assembly-1.jpeg" class="hex-image">
-            <p style="font-size:12px; margin:0;">active site prediction</p>
-            <div class="click-here-accent">click here</div>
-        </div></div>""", unsafe_allow_html=True)
-        if st.button("Toggle Active", key="btn2"): st.session_state.show_desc["p2"] = not st.session_state.show_desc["p2"]
-        if st.session_state.show_desc["p2"]:
-            st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
-            for i in ["• Pocket identification", "• Ranking", "• SASA mapping"]:
-                st.markdown(f'<div class="info-list">{i}</div>', unsafe_allow_html=True)
-            st.button("Run Active site predict", key="run2")
-            st.markdown('</div></div>', unsafe_allow_html=True)
+st.write("#### Home :-")
 
-    # Column 3: Mutation
-    with c3:
-        st.markdown("""<div class="benzene-cluster"><div class="diamond-hexagon">
-            <p class="hexagon-title">Mutation</p>
-            <p style="margin:0;">Image</p>
-            <img src="https://cdn.rcsb.org/images/structures/1/1aie/1aie_assembly-1.jpeg" class="hex-image">
-            <p style="font-size:12px; margin:0;">mutation prediction</p>
-            <div class="click-here-accent">click here</div>
-        </div></div>""", unsafe_allow_html=True)
-        if st.button("Toggle Mutation", key="btn3"): st.session_state.show_desc["p3"] = not st.session_state.show_desc["p3"]
-        if st.session_state.show_desc["p3"]:
-            st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
-            for i in ["• Hotspot identification", "• Stability mapping", "• Alanine scanning"]:
-                st.markdown(f'<div class="info-list">{i}</div>', unsafe_allow_html=True)
-            st.button("Run mutation pt", key="run3")
-            st.markdown('</div></div>', unsafe_allow_html=True)
+# Input Area
+with st.expander("📂 TARGET INPUT (Upload PDB or Enter ID)", expanded=True):
+    col_up, col_id = st.columns(2)
+    with col_up:
+        up = st.file_uploader("Upload Structure", type=['pdb'])
+    with col_id:
+        pid = st.text_input("OR Enter PDB ID", placeholder="e.g. 3FXI")
+
+st.divider()
+
+# Main 3-Column Interface
+c1, c2, c3 = st.columns(3)
+
+# Column 1: Protein Analysis (with Graphic)
+with c1:
+    st.markdown("""<div class="benzene-cluster"><div class="diamond-hexagon">
+        <p class="hexagon-title">protein</p>
+        <div style="background-image: url('https://rcsb.org/pdb/images/3fxi_asym_r_500.jpg'); 
+                    background-size: cover; background-position: center; 
+                    width: 100px; height: 100px; margin: 5px; border: 1px solid #2d3436;"></div>
+        <p style="font-size:12px; margin:0; font-weight:bold;">protein analysis</p>
+        <div class="click-here-accent">click here</div>
+    </div></div>""", unsafe_allow_html=True)
+    if st.button("Toggle Protein", key="btn1"): st.session_state.show_desc["p1"] = not st.session_state.show_desc["p1"]
+    if st.session_state.show_desc["p1"]:
+        st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
+        for i in ["• Parameter calculation", "• pI determination", "• GRAVY score"]:
+            st.markdown(f'<div class="info-list">{i}</div>', unsafe_allow_html=True)
+        st.button("RUN protein cat", key="run1")
+        st.markdown('</div></div>', unsafe_allow_html=True)
+
+# Column 2: Active Site (with Graphic)
+with c2:
+    st.markdown("""<div class="benzene-cluster"><div class="diamond-hexagon">
+        <p class="hexagon-title">Active site</p>
+        <div style="background-image: url('https://cdn.rcsb.org/images/structures/8/8m5s/8m5s_assembly-1.jpeg'); 
+                    background-size: cover; background-position: center; 
+                    width: 100px; height: 100px; margin: 5px; border: 1px solid #2d3436;"></div>
+        <p style="font-size:12px; margin:0; font-weight:bold;">active site prediction</p>
+        <div class="click-here-accent">click here</div>
+    </div></div>""", unsafe_allow_html=True)
+    if st.button("Toggle Active", key="btn2"): st.session_state.show_desc["p2"] = not st.session_state.show_desc["p2"]
+    if st.session_state.show_desc["p2"]:
+        st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
+        for i in ["• Pocket identification", "• Ranking", "• SASA mapping"]:
+            st.markdown(f'<div class="info-list">{i}</div>', unsafe_allow_html=True)
+        st.button("Run Active site predict", key="run2")
+        st.markdown('</div></div>', unsafe_allow_html=True)
+
+# Column 3: Mutation (with Graphic)
+with c3:
+    st.markdown("""<div class="benzene-cluster"><div class="diamond-hexagon">
+        <p class="hexagon-title">Mutation</p>
+        <div style="background-image: url('https://cdn.rcsb.org/images/structures/1/1aie/1aie_assembly-1.jpeg'); 
+                    background-size: cover; background-position: center; 
+                    width: 100px; height: 100px; margin: 5px; border: 1px solid #2d3436;"></div>
+        <p style="font-size:12px; margin:0; font-weight:bold;">mutation prediction</p>
+        <div class="click-here-accent">click here</div>
+    </div></div>""", unsafe_allow_html=True)
+    if st.button("Toggle Mutation", key="btn3"): st.session_state.show_desc["p3"] = not st.session_state.show_desc["p3"]
+    if st.session_state.show_desc["p3"]:
+        st.markdown('<div class="benzene-cluster"><div class="attached-info-box">', unsafe_allow_html=True)
+        for i in ["• Hotspot identification", "• Stability mapping", "• Alanine scanning"]:
+            st.markdown(f'<div class="info-list">{i}</div>', unsafe_allow_html=True)
+        st.button("Run mutation pt", key="run3")
+        st.markdown('</div></div>', unsafe_allow_html=True)
 
 # --- RESTORED CONTENT FOR OTHER TABS ---
 with tabs[1]:
