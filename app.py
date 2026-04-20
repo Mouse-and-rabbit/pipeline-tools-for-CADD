@@ -85,7 +85,7 @@ def generate_exact_logo():
 
     # 2. The Main Hexagon Clusters
     coords = [(-2, 1.5), (-3.5, -0.5), (-0.5, -0.5), (-2, -2.5)]
-    labels = ["C", "M", "M", "X"]
+    labels = ["U", "M", "M", "O"]
     for (x, y), label in zip(coords, labels):
         ring = RegularPolygon((x, y), numVertices=6, radius=1.1, orientation=0, edgecolor='#2d3436', facecolor='white', lw=1.5)
         ax.add_patch(ring)
