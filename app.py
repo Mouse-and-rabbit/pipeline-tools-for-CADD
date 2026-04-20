@@ -101,16 +101,30 @@ def generate_momu_sketch_logo():
     coords = [(0, 2.2), (-1.9, 0), (1.9, 0), (0, -2.2)]
     labels = ["U", "M", "M", "O"]
 
-    # Draw Ring Cluster
+ # --- Draw Ring Cluster ---
     for (x, y), label in zip(coords, labels):
-        # Thinner line width (lw=1) as requested
-        ring = RegularPolygon((x, y), numVertices=6, radius=1.3, orientation=0, 
-                              edgecolor='#ffffff', facecolor='none', lw=1.2)
-                              edgecolor='#2d3436', facecolor='#f8f9fa', lw=1.2)
+        # Define the hexagon (only one set of colors allowed here)
+        ring = RegularPolygon(
+            (x, y), 
+            numVertices=6, 
+            radius=1.3, 
+            orientation=0, 
+            edgecolor='#2d3436', 
+            facecolor='#f8f9fa', 
+            lw=1.2
+        )
         ax.add_patch(ring)
-        ax.text(x, y, label, color='#00d4ff', fontsize=15, fontweight='bold', ha='center', va='center')
-        ax.text(x, y, label, color='#2d3436', fontsize=16, fontweight='bold', ha='center', va='center')
-
+        
+        # Define the label text (only one text command needed)
+        ax.text(
+            x, y, 
+            label, 
+            color='#2d3436', 
+            fontsize=16, 
+            fontweight='bold', 
+            ha='center', 
+            va='center'
+        )
     # Add Free Radical Dot (at the bottom right vertex of the cluster)
     ax.plot(1.1, -2.9, marker='o', markersize=6, color="#00d4ff") 
     
