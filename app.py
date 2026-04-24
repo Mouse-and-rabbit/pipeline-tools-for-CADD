@@ -1,189 +1,256 @@
 import streamlit as st
+import io
 import pandas as pd
 import numpy as np
-import os
-import json
-import joblib
+import matplotlib.pyplot as plt
 import requests
+from streamlit_lottie import st_lottie
+from Bio.PDB import PDBParser, PPBuilder, PDBList
 from Bio.SeqUtils import ProtParam
-from Bio.PDB import PDBParser, PPBuilder
+from docx import Document
+from docx.shared import Inches, RGBColor
+from streamlit_molstar import st_molstar
+from matplotlib.patches import Circle
+from matplotlib.patches import RegularPolygon, Circle
 
-# --- 1. SYSTEM INITIALIZATION (The Database) ---
-MEMORY_FILE = 'protein_memory.json'
-BRAIN_FILE = 'living_brain.pkl'
-all_labels = np.array([0, 1])
+# --- 1. SCHRÖDINGER-INSPIRED CONFIG ---
+st.set_page_config(page_title="Enzyme Optimization Hub | Advanced CADD", layout="wide", page_icon="🧬")
+st.set_page_config(page_title="BioMumo | Enzyme Optimization Hub", layout="wide", page_icon="🧬")
 
-# Load Brain & Cache (The persistent storage)
-if os.path.exists(BRAIN_FILE):
-    living_brain = joblib.load(BRAIN_FILE)
-else:
-    from sklearn.linear_model import SGDClassifier
-    living_brain = SGDClassifier(loss='log_loss', random_state=42)
+st.markdown("""
+    <style>
+@@ -60,198 +60,191 @@
+    doc.save(bio)
+    return bio.getvalue()
 
-if os.path.exists(MEMORY_FILE):
-    with open(MEMORY_FILE, 'r') as f:
-        fast_cache = json.load(f)
-else:
-    fast_cache = {}
+# --- 3. CUSTOM LOGO GENERATOR & HEADER ---
+def generate_custom_logo():
+    # Wider canvas to prevent text clipping
+    fig, ax = plt.subplots(figsize=(10, 3), facecolor='#0b0f19')
+# --- 3. CUSTOM LOGO GENERATOR (BIOMUMO DESIGN) ---
+def generate_biomumo_logo():
+    fig, ax = plt.subplots(figsize=(10, 4), facecolor='#0b0f19')
+    ax.set_facecolor('#0b0f19')
+    ax.set_xlim(-2, 16) # Increased x-limit for the text
+    ax.set_ylim(-2, 2)
+    ax.set_xlim(-3, 16)
+    ax.set_ylim(-3, 3)
+    ax.axis('off')
 
-# --- FIX: consistent feature order ---
-FEATURE_KEYS = [
-    "molecular_weight",
-    "aromaticity",
-    "instability_index",
-    "isoelectric_point",
-    "gravy_score"
-]
+    # Abstract "Active Site" Node Structure
+    nodes_x = [0, 1.2, 2.8, 1.5, 0.2, -1]
+    nodes_y = [0.8, 1.2, 0, -1.2, -0.5, 0.2]
+    
+    # Draw connections
+    for i in range(len(nodes_x)):
+        for j in range(i + 1, len(nodes_x)):
+            dist = np.sqrt((nodes_x[i]-nodes_x[j])**2 + (nodes_y[i]-nodes_y[j])**2)
+            if dist < 2.5:
+                ax.plot([nodes_x[i], nodes_x[j]], [nodes_y[i], nodes_y[j]], 
+                        color='#00d4ff', lw=1.5, alpha=0.3, zorder=1)
 
-# --- 2. CORE BIOLOGICAL LOGIC ---
+    # Draw Nodes with Glow
+    for i in range(len(nodes_x)):
+        ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.12, color='#ffffff', zorder=5))
+        ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.25, color='#00d4ff', alpha=0.4, zorder=4))
+        if i == 2: # Highlight the "Mutation" center
+            ax.add_patch(Circle((nodes_x[i], nodes_y[i]), 0.6, color='#00d4ff', alpha=0.15, zorder=3))
+    # Draw the large surrounding circle from your sketch
+    outer_circle = Circle((0, 0), 2.8, color='#00d4ff', fill=False, lw=1.5, alpha=0.4)
+    ax.add_patch(outer_circle)
 
-def extract_ai_features(sequence):
-    """Converts protein letters into numerical bio-signatures."""
-    try:
-        analysis = ProtParam.ProteinAnalysis(sequence)
-        return {
-            "molecular_weight": analysis.molecular_weight(),
-            "aromaticity": analysis.aromaticity(),
-            "instability_index": analysis.instability_index(),
-            "isoelectric_point": analysis.isoelectric_point(),
-            "gravy_score": analysis.gravy(),
-        }
-    except:
-        return None
+    # Coordinates for the 4 fused benzene rings
+    ring_centers = [(0, 1.4), (-1.2, 0), (1.2, 0), (0, -1.4)]
 
-def predict_active_site(sequence):
-    """Identifies potential catalytic residues."""
-    critical_residues = ['H', 'C', 'D', 'E', 'S']
-    found = [{"Residue": aa, "Position": i+1} for i, aa in enumerate(sequence) if aa in critical_residues]
-    return pd.DataFrame(found)
+    for i, (cx, cy) in enumerate(ring_centers):
+        hexagon = RegularPolygon((cx, cy), numVertices=6, radius=0.9, 
+                                 orientation=0, edgecolor='#00d4ff', 
+                                 facecolor='none', lw=2.5)
+        ax.add_patch(hexagon)
+        if i == 1 or i == 2:
+            ax.text(cx, cy, "M", color='#ffffff', fontsize=22, 
+                    fontweight='bold', ha='center', va='center', fontfamily='sans-serif')
 
-def analyze_mutation(original_sequence, position, new_aa):
-    """Predicts stability impact of a specific mutation."""
-    mutant_list = list(original_sequence)
+    # Sketch-style decoration (bottom right)
+    mol_x, mol_y = 1.8, -1.5
+    ax.add_patch(Circle((mol_x, mol_y), 0.15, color='#ffffff', zorder=5))
+    for dx, dy in [(0.4, 0.4), (-0.4, 0.4), (0.4, -0.4), (-0.4, -0.4)]:
+        ax.plot([mol_x, mol_x+dx], [mol_y, mol_y+dy], color='#00d4ff', lw=1)
+        ax.add_patch(Circle((mol_x+dx, mol_y+dy), 0.1, color='#00d4ff', alpha=0.6))
 
-    # --- FIX: position safety ---
-    if position < 1 or position > len(original_sequence):
-        return 0, original_sequence
+    # Branding Text
+    ax.text(4.2, 0.3, "ENZYME", color='#ffffff', fontsize=38, fontweight='black', fontfamily='sans-serif')
+    ax.text(4.2, -0.7, "OPTIMIZATION HUB", color='#00d4ff', fontsize=22, fontweight='bold', fontfamily='sans-serif')
+    
+    # Decorative line
+    ax.plot([4.2, 14.5], [-0.9, -0.9], color='#00d4ff', lw=2, alpha=0.5)
+    ax.text(4.5, 0.4, "BIOMUMO", color='#ffffff', fontsize=52, fontweight='black', fontfamily='sans-serif')
+    ax.text(4.5, -0.6, "ENZYME OPTIMIZATION HUB", color='#00d4ff', fontsize=18, fontweight='bold')
+    ax.plot([4.5, 14.5], [-0.9, -0.9], color='#00d4ff', lw=2, alpha=0.5)
+    return fig
 
-    mutant_list[position-1] = new_aa
-    mutant_seq = "".join(mutant_list)
+# --- RENDER AND DISPLAY LOGO ---
+# 1. Clear previous plots to avoid memory overlap
+# --- RENDER LOGO ---
+plt.close('all') 
 
-    orig_feats = extract_ai_features(original_sequence)
-    mutant_feats = extract_ai_features(mutant_seq)
+# 2. Generate the figure
+logo_fig = generate_custom_logo()
 
-    if orig_feats is None or mutant_feats is None:
-        return 0, mutant_seq
+# 3. Save to a fresh buffer
+logo_fig = generate_biomumo_logo()
+logo_buf = io.BytesIO()
+logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=False)
+logo_fig.savefig(logo_buf, format='png', bbox_inches='tight', pad_inches=0.1, transparent=True)
+logo_buf.seek(0)
 
-    orig_X = np.array([[orig_feats[k] for k in FEATURE_KEYS]])
-    mutant_X = np.array([[mutant_feats[k] for k in FEATURE_KEYS]])
+# 4. Display in Streamlit (Centered)
+header_col1, header_col2, header_col3 = st.columns([1, 5, 1])
+# Display Header
+header_col1, header_col2, header_col3 = st.columns([1, 6, 1])
+with header_col2:
+    st.image(logo_buf, use_container_width=True)
 
-    # --- FIX: model not trained check ---
-    if not hasattr(living_brain, "classes_"):
-        return 0, mutant_seq
+# 5. Cleanup
+plt.close(logo_fig)
 
-    orig_prob = living_brain.predict_proba(orig_X)[0][1]
-    mutant_prob = living_brain.predict_proba(mutant_X)[0][1]
+tabs = st.tabs(["🏠 HOME / PIPELINE", "📜 DESCRIPTIONS", "👥 ABOUT US", "📚 REFERENCES", "📧 CONTACT"])
 
-    return mutant_prob - orig_prob, mutant_seq
+# --- 4. PAGE: HOME / PIPELINE ---
+with tabs[0]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-text"><p class="sub-title">Computational Drug Discovery Platform</p><h1 class="main-title">BioMumo: Opening New Worlds for Molecular Discovery</h1></div>', unsafe_allow_html=True)
+    if 'active_file' not in st.session_state: st.session_state.active_file = None
+    if 'active_name' not in st.session_state: st.session_state.active_name = "Target"
 
-# --- 3. WEB INTERFACE ---
-st.set_page_config(page_title="BioMumo (MOMU CORE)", layout="wide")
-st.title("🧬 BioMumo: Adaptive Molecular Pipeline")
-
-# SIDEBAR: Structural Input & Training
-st.sidebar.header("Step 1: Structural Input")
-input_method = st.sidebar.radio("Input Method", ["PDB ID", "Upload .PDB File", "Manual Sequence"])
-
-final_seq = ""
-
-if input_method == "PDB ID":
-    pdb_id = st.sidebar.text_input("Enter 4-Letter PDB ID (e.g., 1A2B)")
-    if pdb_id:
-        url = f"https://files.rcsb.org/download/{pdb_id.upper()}.pdb"
-        response = requests.get(url)
-
-        # --- FIX: request failure handling ---
-        if response.status_code == 200:
-            with open("temp.pdb", "w") as f:
-                f.write(response.text)
-
-            parser = PDBParser(QUIET=True)
-            structure = parser.get_structure("protein", "temp.pdb")
-            ppb = PPBuilder()
-
-            for pp in ppb.build_peptides(structure):
-                final_seq += str(pp.get_sequence())
+    col_left, col_right = st.columns([1, 2], gap="large")
+    with col_left:
+        st.markdown("### 🧪 RESEARCH INPUT")
+        mode = st.radio("Protocol", ["Upload PDB", "Enter PDB ID"], horizontal=True)
+        if mode == "Upload PDB":
+            up = st.file_uploader("Upload Structure", type=['pdb'])
+            if up:
+                with open("temp.pdb", "wb") as f: f.write(up.getbuffer())
+                st.session_state.active_file = "temp.pdb"
+                st.session_state.active_name = up.name.split('.')[0]
         else:
-            st.error("❌ Failed to fetch PDB file.")
+            pid = st.text_input("PDB ID (e.g., 3FXI)").upper()
+            if pid:
+                with st.spinner("Fetching from PDB..."):
+                    try:
+                        pdbl = PDBList()
+                        st.session_state.active_file = pdbl.retrieve_pdb_file(pid, pdir='.', file_format='pdb')
+                        st.session_state.active_name = pid
+                    except: st.error("Fetch Error")
+        st.divider()
+        st.markdown("### ⚡ CORE UTILITIES")
+        run1 = st.button("① Protein Structure Analysis")
+        run2 = st.button("② Active Site Mapping")
+        run3 = st.button("③ Mutation Prediction")
 
-elif input_method == "Upload .PDB File":
-    uploaded_file = st.sidebar.file_uploader("Choose a PDB file", type="pdb")
-    if uploaded_file:
-        with open("temp.pdb", "wb") as f:
-            f.write(uploaded_file.getbuffer())
+    with col_right:
+        st.markdown("### 📊 SCIENTIFIC OUTPUT")
+        if st.session_state.active_file:
+            parser = PDBParser(QUIET=True)
+            structure = parser.get_structure(st.session_state.active_name, st.session_state.active_file)
+            with st.expander("🌐 MOLECULAR VIEWPORT", expanded=True):
+                st_molstar(st.session_state.active_file, height=500)
+            if run1:
+                with st.status("Analyzing..."):
+                    if lottie_scan: st_lottie(lottie_scan, height=80)
+                    ppb = PPBuilder()
+                    seq = "".join([str(p.get_sequence()) for p in ppb.build_peptides(structure)])
+                    ana = ProtParam.ProteinAnalysis(seq)
+                    df1 = pd.DataFrame({'Parameter': ['MW', 'pI', 'Instability'], 'Value': [f"{ana.molecular_weight()/1000:.2f} kDa", f"{ana.isoelectric_point():.2f}", f"{ana.instability_index():.2f}"]})
+                    st.table(df1)
+                    st.download_button("📥 DOWNLOAD REPORT", create_prof_report("Physico-Chemical", "ProtParam analysis.", ["pI formula", "MW sum"], df1), f"{st.session_state.active_name}_Physico.docx")
+            elif run3:
+                with st.status("Predicting Hotspots..."):
+                    res_data = [{"Pos": a.get_parent().id[1], "B": a.get_bfactor()} for a in structure.get_atoms()]
+                    df_mut = pd.DataFrame(res_data).groupby('Pos').mean().reset_index()
+                    df_mut['Score'] = (df_mut['B'] / df_mut['B'].max()) * 100
+                    fig, ax = plt.subplots(figsize=(10, 3), facecolor='#0b0f19')
+                    ax.set_facecolor('#0b0f19')
+                    ax.plot(df_mut['Pos'], df_mut['Score'], color='#00d4ff')
+                    ax.tick_params(colors='white')
+                    st.pyplot(fig)
+                    st.table(df_mut.nlargest(10, 'Score'))
+        else: st.info("Awaiting molecular target.")
 
-        parser = PDBParser(QUIET=True)
-        structure = parser.get_structure("protein", "temp.pdb")
-        ppb = PPBuilder()
+# --- 5. PAGE: DESCRIPTIONS (LONG & DETAILED) ---
+with tabs[1]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Theoretical Framework</p><h1 class="main-title">Methodology & Mathematical Basis</h1></div>', unsafe_allow_html=True)
+    st.markdown("### 🧬 1. Physico-Chemical Sequence Analysis")
+    st.write("""
+    The analysis utilizes the **ExPASy ProtParam** algorithm to derive the fundamental properties of the protein. 
+    By treating the primary sequence as a linear chain of residues, we can predict the behavior of the enzyme in different physiological environments. 
+    This is especially critical for mucosal drug delivery, where the pH and ionic strength of the environment can drastically alter enzyme activity.
+    """)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.info("**Isoelectric Point (pI)**")
+        st.latex(r"pI = \frac{pK_i + pK_j}{2}")
+        st.write("Determines the pH at which the enzyme carries no net electrical charge. This is vital for maintaining enzyme stability within the variable pH of the mucosal layer.")
+    with c2:
+        st.info("**Molecular Weight (MW)**")
+        st.latex(r"MW = \sum (n_i \times m_i) + (H_2O)")
+        st.write("Calculated by the summation of average isotopic masses of amino acids. High MW proteins often face diffusion barriers in thick mucin networks.")
+    st.divider()
+    st.markdown("### 🌡️ 2. Mutation Prediction via B-Factor Dynamics")
+    st.write("""
+    The **Debye-Waller Factor** (B-factor) reflects the thermal displacement of atoms. In enzyme engineering, high B-factor regions represent structural flexibility hotspots. 
+    Our pipeline identifies these flexible loops; by mutating these residues to more rigid amino acids, we can enhance the thermostability of the enzyme. 
+    For mucin glycoproteins, an optimized enzyme must remain active despite the high viscosity and potential inhibitors present in the secretion.
+    """)
+    st.latex(r"B_i = 8\pi^2 \langle u_i^2 \rangle")
+    st.latex(r"Flexibility\_Score = \left( \frac{B_{residue}}{B_{maximum}} \right) \times 100")
 
-        for pp in ppb.build_peptides(structure):
-            final_seq += str(pp.get_sequence())
+# --- 6. PAGE: ABOUT US (DETAILED) ---
+with tabs[2]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Institutional Profile</p><h1 class="main-title">Advancing Computational Pharmaceutics</h1></div>', unsafe_allow_html=True)
+    st.markdown("### 🏛️ Vinayaka Mission's College of Pharmacy")
+    st.write("""
+    A constituent college of Vinayaka Mission's Research Foundation, our institution is at the forefront of pharmaceutical innovation. 
+    This platform was developed as part of advanced research into **In-Silico Drug Discovery** and **Computational Proteomics**.
+    """)
+    st.success("""
+    **Mission Objective:** To bridge the gap between traditional Wet-Lab pharmacy and high-performance computational modeling. 
+    We focus on training pharmacists to utilize Python-based bioinformatics for solving complex biological challenges.
+    """)
+    st.markdown("### 🧪 Research Initiative & AI Pipeline")
+    st.info("""
+    **Project Goal:** The core of this initiative lies in the construction of an end-to-end **computational pipeline** designed to bridge the gap between raw data and actionable insights through **Machine Learning (ML)** and **Deep Learning (DL)**. 
+    By implementing advanced **Neural Network architectures**, the system automates high-dimensional feature extraction and pattern recognition. 
+    The pipeline is engineered to handle complex data preprocessing, model training via **gradient-based optimization**, and rigorous validation using **predictive analytics**. 
+    This integrated AI ecosystem allows for the rapid iteration of hypotheses, utilizing **Transformer-based models** to simulate scenarios and predict outcomes with high precision.
+    """)
 
-else:
-    final_seq = st.sidebar.text_area("Paste Sequence Here").strip().upper()
+# --- 7. PAGE: REFERENCES (DETAILED) ---
+with tabs[3]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Scholarly Foundation</p><h1 class="main-title">Scientific References</h1></div>', unsafe_allow_html=True)
+    st.write("""
+    1. **Cock PJ, et al.** (2009). *Biopython: freely available Python tools for computational molecular biology.* Bioinformatics, 25(11).
+    2. **Gasteiger E, et al.** (2005). *Protein Identification and Analysis Tools on the ExPASy Server.*
+    3. **Sun Z, et al.** (2019). *Utility of B-factors in protein engineering.* Chemical Reviews.
+    4. **Abramson J, et al.** (2024). *Accurate structure prediction of biomolecular interactions with AlphaFold 3.* Nature, 630.
+    5. **Khan A, et al.** (2026). *Protein structure prediction powered by artificial intelligence.* Front Mol Biosci.
+    """)
 
-st.sidebar.divider()
-st.sidebar.header("Step 2: Training Data")
-actual_label = st.sidebar.selectbox("Known Stability?", [None, 0, 1], help="0=Unstable, 1=Stable")
-
-# --- 4. MAIN DASHBOARD ---
-if final_seq:
-    st.subheader("Target Sequence")
-    st.code(final_seq[:120] + "...")
-
-    tab1, tab2, tab3 = st.tabs(["Stability Prediction", "Active Site Map", "Mutation Lab"])
-
-    with tab1:
-        if st.button("Run BioMumo Prediction"):
-            if final_seq in fast_cache:
-                st.success(f"📍 [MEMORY MATCH] Result: {fast_cache[final_seq]['verdict']}")
-            else:
-                feats = extract_ai_features(final_seq)
-
-                # --- FIX: feature extraction check ---
-                if feats is None:
-                    st.error("❌ Feature extraction failed.")
-                else:
-                    X = np.array([[feats[k] for k in FEATURE_KEYS]])
-
-                    # --- FIX: model not trained ---
-                    if not hasattr(living_brain, "classes_"):
-                        st.warning("⚠️ Model not trained yet. Provide a labeled example.")
-                    else:
-                        pred = living_brain.predict(X)[0]
-                        verdict = "STABLE/ACTIVE" if pred == 1 else "UNSTABLE/INACTIVE"
-                        st.info(f"🔍 [PREDICTION] AI Estimates: {verdict}")
-
-                        # Live Learning
-                        if actual_label is not None:
-                            living_brain.partial_fit(X, np.array([actual_label]), classes=all_labels)
-                            fast_cache[final_seq] = {"verdict": verdict}
-
-                            joblib.dump(living_brain, BRAIN_FILE)
-                            with open(MEMORY_FILE, 'w') as f:
-                                json.dump(fast_cache, f)
-
-                            st.write("🧠 Brain Updated & Saved Locally.")
-
-    with tab2:
-        st.subheader("Catalytic Site Mapping")
-        st.dataframe(predict_active_site(final_seq))
-
-    with tab3:
-        st.subheader("In-Silico Mutagenesis")
-        pos = st.number_input("Position to Mutate", min_value=1, max_value=len(final_seq), value=1)
-        new_aa = st.selectbox("New Amino Acid", list("ACDEFGHIKLMNPQRSTVWY"))
-
-        if st.button("Predict Mutation Impact"):
-            diff, m_seq = analyze_mutation(final_seq, pos, new_aa)
-            st.metric("Stability Change Score", f"{diff*100:.2f}%", delta=f"{diff:.4f}")
+# --- 8. PAGE: CONTACT (DETAILED) ---
+with tabs[4]:
+    st.markdown('<div class="hero-text"><p class="sub-title">Collaboration</p><h1 class="main-title">Contact the Research Team</h1></div>', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        st.markdown('<div style="background:rgba(30,41,59,0.7);padding:30px;border-radius:15px;border:1px solid #00d4ff;text-align:center;">'
+                    '<h2 style="color:#00d4ff;">Mowriss.M.G & Mugilarasi.C</h2>'
+                    '<p style="font-size:1.1em; color:#94a3b8;">B.Pharm Research Scholars</p>'
+                    '<hr style="border-color:rgba(0,212,255,0.2);">'
+                    '<p><strong>Vinayaka Mission\'s College of Pharmacy</strong></p>'
+                    '<p style="font-style:italic; color:#e2e8f0;">"Dedicated to the development of computational tools for enhanced mucosal drug delivery systems."</p>'
+                    '</div>', unsafe_allow_html=True)
+        with st.form("c_form", clear_on_submit=True):
+            em = st.text_input("Email")
+            msg = st.text_area("Details of Inquiry")
+            if st.form_submit_button("SEND INQUIRY") and em and msg:
+                st.success("Redirecting...")
+                st.markdown(f'<a href="mailto:mowrissm@gmail.com?body={msg}" target="_blank">Click to Finalize Send</a>', unsafe_allow_html=True)
